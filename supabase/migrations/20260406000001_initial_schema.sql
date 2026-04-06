@@ -258,6 +258,22 @@ ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reminders_sent ENABLE ROW LEVEL SECURITY;
 
+-- Security-definer functions to check membership without RLS recursion
+CREATE OR REPLACE FUNCTION public.get_builder_ids_for_user(uid uuid)
+RETURNS SETOF uuid
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT builder_id FROM memberships WHERE user_id = uid; $$;
+
+CREATE OR REPLACE FUNCTION public.get_builder_ids_for_user_by_role(uid uuid, allowed_roles text[])
+RETURNS SETOF uuid
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT builder_id FROM memberships WHERE user_id = uid AND role = ANY(allowed_roles); $$;
+
+CREATE OR REPLACE FUNCTION public.get_home_ids_for_user(uid uuid)
+RETURNS SETOF uuid
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT home_id FROM home_assignments WHERE user_id = uid; $$;
+
 -- RLS Policies
 
 -- Profiles
@@ -266,82 +282,79 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 
 -- Builders
 CREATE POLICY "Members can read their builder" ON builders FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = builders.id AND memberships.user_id = auth.uid()));
+  USING (id IN (SELECT public.get_builder_ids_for_user(auth.uid())));
 CREATE POLICY "Owners can update their builder" ON builders FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = builders.id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Memberships
--- Note: only "read own" policy here. A self-referencing "owners can read all builder memberships"
--- causes infinite recursion in Postgres RLS. If staff listing is needed later, use a security-definer
--- function or a separate lookup table.
 CREATE POLICY "Users can read own memberships" ON memberships FOR SELECT USING (user_id = auth.uid());
 
 -- Projects
 CREATE POLICY "Members can read projects" ON projects FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = projects.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Owners can manage projects" ON projects FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = projects.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Templates
 CREATE POLICY "Builder members can read templates" ON templates FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = templates.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Owners can manage templates" ON templates FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = templates.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Template Items
 CREATE POLICY "Builder members can read template items" ON template_items FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships JOIN templates ON templates.id = template_items.template_id WHERE memberships.builder_id = templates.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (EXISTS (SELECT 1 FROM templates WHERE templates.id = template_items.template_id AND templates.builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff']))));
 CREATE POLICY "Owners can manage template items" ON template_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships JOIN templates ON templates.id = template_items.template_id WHERE memberships.builder_id = templates.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (EXISTS (SELECT 1 FROM templates WHERE templates.id = template_items.template_id AND templates.builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner']))));
 
 -- Homes
 CREATE POLICY "Builder members can read homes" ON homes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = homes.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Buyers can read assigned homes" ON homes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = homes.id AND home_assignments.user_id = auth.uid()));
+  USING (id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 CREATE POLICY "Owners can manage homes" ON homes FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = homes.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Home Assignments
 CREATE POLICY "Builder members can read home assignments" ON home_assignments FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships JOIN homes ON homes.id = home_assignments.home_id WHERE memberships.builder_id = homes.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (EXISTS (SELECT 1 FROM homes WHERE homes.id = home_assignments.home_id AND homes.builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff']))));
 CREATE POLICY "Buyers can read own home assignments" ON home_assignments FOR SELECT USING (user_id = auth.uid());
 
 -- Home Items
 CREATE POLICY "Builder members can read home items" ON home_items FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = home_items.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Buyers can read assigned home items" ON home_items FOR SELECT
-  USING (EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = home_items.home_id AND home_assignments.user_id = auth.uid()));
+  USING (home_id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 CREATE POLICY "Owners can manage home items" ON home_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = home_items.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 CREATE POLICY "Buyers can update assigned home items" ON home_items FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = home_items.home_id AND home_assignments.user_id = auth.uid()));
+  USING (home_id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 
 -- Files
 CREATE POLICY "Builder members can read files" ON files FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = files.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Buyers can read files for assigned homes" ON files FOR SELECT
-  USING (files.home_id IS NOT NULL AND EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = files.home_id AND home_assignments.user_id = auth.uid()));
+  USING (home_id IS NOT NULL AND home_id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 CREATE POLICY "Owners can manage files" ON files FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = files.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Notes
 CREATE POLICY "Builder members can read notes" ON notes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = notes.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Buyers can read notes for assigned homes" ON notes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = notes.home_id AND home_assignments.user_id = auth.uid()));
+  USING (home_id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 
 -- Activity Log
 CREATE POLICY "Builder members can read activity log" ON activity_log FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = activity_log.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Buyers can read activity for assigned homes" ON activity_log FOR SELECT
-  USING (EXISTS (SELECT 1 FROM home_assignments WHERE home_assignments.home_id = activity_log.home_id AND home_assignments.user_id = auth.uid()));
+  USING (home_id IN (SELECT public.get_home_ids_for_user(auth.uid())));
 
 -- Invitations
 CREATE POLICY "Builder members can read invitations" ON invitations FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = invitations.builder_id AND memberships.user_id = auth.uid() AND memberships.role IN ('owner', 'staff')));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner','staff'])));
 CREATE POLICY "Owners can manage invitations" ON invitations FOR ALL
-  USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = invitations.builder_id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
+  USING (builder_id IN (SELECT public.get_builder_ids_for_user_by_role(auth.uid(), ARRAY['owner'])));
 
 -- Storage bucket
 INSERT INTO storage.buckets (id, name, public) VALUES ('documents', 'documents', false);
