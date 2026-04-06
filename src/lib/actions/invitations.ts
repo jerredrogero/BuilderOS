@@ -88,7 +88,7 @@ export async function sendInvitation(homeId: string, formData: FormData) {
   await supabase.from("activity_log").insert({
     builder_id: context.builder.id,
     home_id: homeId,
-    event_type: "invitation_sent",
+    action: "invitation_sent",
     payload: { email, invitation_id: invitation.id },
   });
 

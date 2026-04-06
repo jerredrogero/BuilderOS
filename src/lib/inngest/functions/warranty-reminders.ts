@@ -42,8 +42,7 @@ export const warrantyReminders = inngest.createFunction(
               contact_email
             ),
             home_assignments (
-              buyer_email,
-              buyer_id,
+              user_id,
               profiles (
                 id,
                 email,
@@ -88,7 +87,7 @@ export const warrantyReminders = inngest.createFunction(
 
       for (const assignment of assignments) {
         const profile = assignment.profiles as any;
-        const buyerEmail = profile?.email || assignment.buyer_email;
+        const buyerEmail = profile?.email;
         const recipientId = profile?.id || null;
 
         if (!buyerEmail) continue;

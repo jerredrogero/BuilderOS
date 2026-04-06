@@ -97,7 +97,7 @@ export async function createHome(formData: FormData) {
   await supabase.from("activity_log").insert({
     builder_id: context.builder.id,
     home_id: home.id,
-    event_type: "home_created",
+    action: "home_created",
     payload: { address, lot_number: lotNumber },
   });
 
@@ -124,7 +124,7 @@ export async function updateHomeStatus(homeId: string, status: string) {
   await supabase.from("activity_log").insert({
     builder_id: context.builder.id,
     home_id: homeId,
-    event_type: "status_changed",
+    action: "status_changed",
     payload: { status },
   });
 

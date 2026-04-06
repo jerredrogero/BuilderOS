@@ -308,28 +308,28 @@ export default async function BuyerItemDetailPage({
                 <CardTitle>Transfer Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                {item.provider_name && (
+                {item.metadata?.provider_name && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Provider</span>
-                    <span>{item.provider_name}</span>
+                    <span>{item.metadata.provider_name}</span>
                   </div>
                 )}
-                {item.provider_phone && (
+                {item.metadata?.provider_phone && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Phone</span>
                     <a
-                      href={`tel:${item.provider_phone}`}
+                      href={`tel:${item.metadata.provider_phone}`}
                       className="text-[var(--brand-accent,#2563eb)] hover:underline"
                     >
-                      {item.provider_phone}
+                      {item.metadata.provider_phone}
                     </a>
                   </div>
                 )}
-                {item.provider_website && (
+                {item.metadata?.provider_website && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Website</span>
                     <a
-                      href={item.provider_website}
+                      href={item.metadata.provider_website}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--brand-accent,#2563eb)] hover:underline"
@@ -338,11 +338,11 @@ export default async function BuyerItemDetailPage({
                     </a>
                   </div>
                 )}
-                {item.transfer_instructions && (
+                {item.metadata?.transfer_instructions && (
                   <div>
                     <p className="text-muted-foreground mb-1">Instructions</p>
                     <pre className="whitespace-pre-wrap font-sans text-sm">
-                      {item.transfer_instructions}
+                      {item.metadata.transfer_instructions}
                     </pre>
                   </div>
                 )}

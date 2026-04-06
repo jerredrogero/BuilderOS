@@ -25,7 +25,7 @@ export const activationNudge = inngest.createFunction(
           `
           id,
           home_id,
-          buyer_email,
+          email,
           token,
           sent_at,
           homes (
@@ -53,7 +53,7 @@ export const activationNudge = inngest.createFunction(
       if (!home) continue;
 
       const builder = home.builders as any;
-      const buyerEmail = invitation.buyer_email;
+      const buyerEmail = invitation.email;
 
       if (!buyerEmail) continue;
 

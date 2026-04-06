@@ -87,7 +87,7 @@ export default async function AcceptInvitePage({
     await serviceClient.from("activity_log").insert({
       builder_id: home.builder_id,
       home_id: home.id,
-      event_type: "invitation_accepted",
+      action: "invitation_accepted",
       payload: { user_id: user.id, invitation_id: invitation.id },
     });
 
