@@ -1,21 +1,35 @@
-# Post-Close Handoff Platform — Product Spec
+# BuilderOS / HomeOS — Product Spec
 
 ## Positioning
 
-A white-label post-closing operations platform for builders/developers that reduces buyer friction, prevents warranty loss, and coordinates the messy handoff period through guided workflows and selective automation.
+The system of record for post-close homeownership and builder handoff. One platform, two experiences:
 
-We own the period right after the home is sold, where buyers are overwhelmed and builders still need things completed correctly.
+- **BuilderOS** — builder/admin/distribution workflow. How homes get set up, handed off, and tracked.
+- **HomeOS** — homeowner-facing experience. The ongoing digital record of the home.
+
+We own the period right after the home is sold, where buyers are overwhelmed and builders still need things completed correctly. The wedge is warranty + home asset capture. The moat is becoming the canonical home record that survives beyond the builder relationship.
+
+### Four-Layer Architecture
+
+The platform is modeled around four layers:
+
+1. **Home** — the property record
+2. **Assets** — physical systems and appliances (HVAC, dishwasher, roof, water heater)
+3. **Artifacts** — files, photos, reports, manuals, receipts, inspection reports
+4. **Actions** — warranties, punch-list tasks, reminders, utility tasks
 
 ### Value Buckets
 
-1. **Warranty capture and completion** — educate buyer on what matters, track deadlines, collect required data, ideally automate submission where possible
-2. **Utility takeover coordination** — tell buyer which providers apply, give steps/contacts/timing, reduce confusion
-3. **Home information handoff** — manuals, contacts, paint codes, fixture info, documents
-4. **Punch list / blue-tape workflow** (Phase 3) — replace loose paper with structured items, photos, statuses, and accountability
+1. **Warranty capture and completion** — tied to specific home assets, track deadlines, collect registration data, automate submission where possible
+2. **Home asset record** — the digital profile of every system and appliance in the home, with photos, serial numbers, and linked documentation
+3. **Inspection report ingestion** — import inspection findings, link to assets, convert to actionable punch list items
+4. **Punch list / closeout** — structured issues with photos, severity, assignment, and resolution tracking
+5. **Utility takeover coordination** — location-aware provider info, transfer steps, contacts
+6. **Home information handoff** — manuals, contacts, paint codes, fixture info, documents
 
 ### The Promise
 
-"We help builders manage the stressful transition from closing to move-in, while making sure buyers don't miss high-value tasks."
+"We help builders manage the stressful transition from closing to move-in, while making sure buyers don't miss high-value tasks — and we give homeowners a permanent digital record of their home."
 
 ### Hard Boundaries (Not Building)
 
