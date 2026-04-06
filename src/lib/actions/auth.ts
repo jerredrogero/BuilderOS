@@ -15,28 +15,18 @@ function generateSlug(name: string): string {
   );
 }
 
-export async function signUp(formData: FormData) {
+// setupBuilderTenant is called from the client-side signup page
+// AFTER the auth user is created client-side (so cookies are set properly).
+// It creates the builder tenant, owner membership, and starter template.
+export async function setupBuilderTenant(companyName: string, email: string) {
   const supabase = await createClient();
 
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const fullName = formData.get("fullName") as string;
-  const companyName = formData.get("companyName") as string;
-
-  // 1. Create auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-    },
-  });
-
-  if (authError || !authData.user) {
-    throw new Error(authError?.message || "Signup failed");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  // 2. Create builder tenant
+  // 1. Create builder tenant
   const { data: builder, error: builderError } = await supabase
     .from("builders")
     .insert({
@@ -51,11 +41,11 @@ export async function signUp(formData: FormData) {
     throw new Error("Failed to create builder account");
   }
 
-  // 3. Create owner membership
+  // 2. Create owner membership
   const { error: membershipError } = await supabase
     .from("memberships")
     .insert({
-      user_id: authData.user.id,
+      user_id: user.id,
       builder_id: builder.id,
       role: "owner",
     });
@@ -64,10 +54,8 @@ export async function signUp(formData: FormData) {
     throw new Error("Failed to create membership");
   }
 
-  // 4. Create starter template
+  // 3. Create starter template
   await createStarterTemplate(supabase, builder.id);
-
-  redirect("/dashboard");
 }
 
 async function createStarterTemplate(
@@ -275,24 +263,6 @@ async function createStarterTemplate(
   if (itemsError) {
     throw new Error("Failed to create starter template items");
   }
-}
-
-export async function signIn(formData: FormData) {
-  const supabase = await createClient();
-
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  redirect("/dashboard");
 }
 
 export async function signOut() {
