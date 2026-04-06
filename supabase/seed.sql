@@ -1,0 +1,53 @@
+-- =============================================================================
+-- BuilderOS Starter Template Reference
+-- =============================================================================
+-- This file documents the "Standard Home Handoff" starter template structure.
+-- Actual seeding happens at builder signup via createStarterTemplate() in
+-- src/lib/actions/auth.ts — this file is for reference only.
+-- =============================================================================
+
+-- Template record
+-- INSERT INTO templates (builder_id, name, description, is_starter) VALUES
+--   (<builder_id>, 'Standard Home Handoff',
+--    'Pre-loaded template for single-family home handoffs. Customize to fit your process.',
+--    true);
+
+-- Template items (18 total, grouped by category)
+--
+-- HVAC
+--   warranty  | HVAC System Warranty       | is_critical: true  | registration_deadline_offset: 30 | responsible_party: buyer
+--   document  | HVAC Owner's Manual        | is_critical: false
+--
+-- Appliances
+--   warranty  | Dishwasher Warranty        | is_critical: true  | registration_deadline_offset: 30 | responsible_party: buyer
+--   warranty  | Refrigerator Warranty      | is_critical: true  | registration_deadline_offset: 30 | responsible_party: buyer
+--   warranty  | Range/Oven Warranty        | is_critical: true  | registration_deadline_offset: 30 | responsible_party: buyer
+--
+-- Roofing
+--   warranty  | Roof Warranty              | is_critical: true  | registration_deadline_offset: 60 | responsible_party: buyer
+--
+-- Plumbing
+--   warranty  | Water Heater Warranty      | is_critical: true  | registration_deadline_offset: 30 | responsible_party: buyer
+--
+-- Utilities
+--   utility   | Electric Service Transfer  | is_critical: true  | utility_type: electric  | due_date_offset: 7
+--   utility   | Gas Service Transfer       | is_critical: true  | utility_type: gas       | due_date_offset: 7
+--   utility   | Water Service Transfer     | is_critical: true  | utility_type: water     | due_date_offset: 7
+--   utility   | Internet Service Setup     | is_critical: false | utility_type: internet  | due_date_offset: 14
+--
+-- Paint & Finishes
+--   info      | Interior Paint Colors      | is_critical: false
+--
+-- Fixtures
+--   info      | Fixture & Appliance Model Numbers | is_critical: false
+--
+-- Move-In
+--   checklist | Test smoke and CO detectors  | is_critical: true  | due_date_offset: 3
+--   checklist | Locate water shut-off valve  | is_critical: true  | due_date_offset: 3
+--   checklist | Locate electrical panel      | is_critical: true  | due_date_offset: 3
+--
+-- Closing
+--   document  | Closing Documents           | is_critical: false
+--
+-- Home
+--   document  | Home Maintenance Guide      | is_critical: false
