@@ -6,12 +6,16 @@ export async function getCurrentBuilder() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from("memberships")
     .select("builder_id, role, builders(*)")
     .eq("user_id", user.id)
     .in("role", ["owner", "staff"])
     .single();
+
+  if (membershipError) {
+    console.error("Membership query error:", membershipError.message, "for user:", user.id);
+  }
 
   if (!membership) return null;
 

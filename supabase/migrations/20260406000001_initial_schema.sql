@@ -271,9 +271,10 @@ CREATE POLICY "Owners can update their builder" ON builders FOR UPDATE
   USING (EXISTS (SELECT 1 FROM memberships WHERE memberships.builder_id = builders.id AND memberships.user_id = auth.uid() AND memberships.role = 'owner'));
 
 -- Memberships
+-- Note: only "read own" policy here. A self-referencing "owners can read all builder memberships"
+-- causes infinite recursion in Postgres RLS. If staff listing is needed later, use a security-definer
+-- function or a separate lookup table.
 CREATE POLICY "Users can read own memberships" ON memberships FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Owners can read builder memberships" ON memberships FOR SELECT
-  USING (EXISTS (SELECT 1 FROM memberships AS m WHERE m.builder_id = memberships.builder_id AND m.user_id = auth.uid() AND m.role = 'owner'));
 
 -- Projects
 CREATE POLICY "Members can read projects" ON projects FOR SELECT
