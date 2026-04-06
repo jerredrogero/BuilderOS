@@ -225,10 +225,10 @@ BEGIN
   -- 9. Seed activity log
   -- =========================================================================
   INSERT INTO activity_log (builder_id, home_id, actor_type, actor_id, action, metadata, created_at) VALUES
-    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'home_created', '{"template_id": "' || v_template_id || '"}', now() - INTERVAL '3 days'),
-    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'status_changed', '{"new_status": "ready"}', now() - INTERVAL '3 days'),
-    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'invitation_sent', '{"email": "buyer@demo.com"}', now() - INTERVAL '2 days'),
-    (v_builder_id, v_home_id, 'user', v_buyer_user_id, 'invitation_accepted', '{}', now() - INTERVAL '1 day');
+    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'home_created', ('{"template_id": "' || v_template_id || '"}')::jsonb, now() - INTERVAL '3 days'),
+    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'status_changed', '{"new_status": "ready"}'::jsonb, now() - INTERVAL '3 days'),
+    (v_builder_id, v_home_id, 'user', v_builder_user_id, 'invitation_sent', '{"email": "buyer@demo.com"}'::jsonb, now() - INTERVAL '2 days'),
+    (v_builder_id, v_home_id, 'user', v_buyer_user_id, 'invitation_accepted', '{}'::jsonb, now() - INTERVAL '1 day');
 
 END;
 $$;

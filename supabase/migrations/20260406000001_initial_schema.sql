@@ -226,9 +226,11 @@ CREATE TABLE reminders_sent (
   home_id         uuid REFERENCES homes(id) ON DELETE CASCADE,
   reminder_type   text NOT NULL,
   recipient_id    uuid NOT NULL REFERENCES profiles(id),
-  sent_at         timestamptz DEFAULT now(),
-  UNIQUE(COALESCE(home_item_id, '00000000-0000-0000-0000-000000000000'), reminder_type, recipient_id)
+  sent_at         timestamptz DEFAULT now()
 );
+
+CREATE UNIQUE INDEX idx_reminders_sent_dedup
+  ON reminders_sent (COALESCE(home_item_id, '00000000-0000-0000-0000-000000000000'), reminder_type, recipient_id);
 
 -- Performance indexes
 CREATE INDEX idx_homes_builder_status ON homes (builder_id, handoff_status);
