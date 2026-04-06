@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-// TODO: sendInvitation action - will be added in invitation task
+import { sendInvitation, resendInvitation } from "@/lib/actions/invitations";
 
 function statusVariant(
   status: string
@@ -165,7 +165,7 @@ export default async function HomeDetailPage({
             <CardTitle className="text-base">Invite Buyer</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="flex gap-2">
+            <form action={sendInvitation.bind(null, homeId)} className="flex gap-2">
               <div className="flex-1">
                 <Label htmlFor="invite-email" className="sr-only">
                   Email
@@ -198,9 +198,11 @@ export default async function HomeDetailPage({
                 <span className="text-sm">{inv.email}</span>
                 <div className="flex items-center gap-2">
                   <Badge variant={statusVariant(inv.status)}>{inv.status}</Badge>
-                  <Button type="button" variant="outline" size="sm">
-                    Resend
-                  </Button>
+                  <form action={resendInvitation.bind(null, homeId, inv.id)}>
+                    <Button type="submit" variant="outline" size="sm">
+                      Resend
+                    </Button>
+                  </form>
                 </div>
               </div>
             ))}
