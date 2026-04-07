@@ -326,11 +326,11 @@ export default async function BuyerItemDetailPage({
                     </a>
                   </div>
                 )}
-                {item.metadata?.provider_website && (
+                {item.metadata?.provider_url && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Website</span>
                     <a
-                      href={item.metadata.provider_website}
+                      href={item.metadata.provider_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--brand-accent,#2563eb)] hover:underline"

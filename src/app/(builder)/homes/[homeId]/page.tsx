@@ -45,7 +45,8 @@ function itemTypeVariant(
       return "default";
     case "utility":
       return "secondary";
-    case "task":
+    case "checklist":
+    case "punch_list":
       return "outline";
     default:
       return "outline";

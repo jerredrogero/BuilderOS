@@ -24,6 +24,28 @@ export async function uploadFile(homeId: string, itemId: string | null, formData
 
   if (!home) throw new Error("Home not found");
 
+  // Verify user has access: must be a builder member OR an assigned buyer
+  const { data: builderMember } = await supabase
+    .from("memberships")
+    .select("role")
+    .eq("builder_id", home.builder_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!builderMember) {
+    // Check if user is an assigned buyer for this home
+    const { data: assignment } = await supabase
+      .from("home_assignments")
+      .select("id")
+      .eq("home_id", homeId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!assignment) {
+      throw new Error("You do not have access to upload files for this home");
+    }
+  }
+
   const storagePath = `${home.builder_id}/${homeId}/${itemId || "general"}/${Date.now()}-${file.name}`;
 
   // Upload to Supabase Storage
@@ -71,6 +93,18 @@ export async function uploadFile(homeId: string, itemId: string | null, formData
 
 export async function getFileUrl(storagePath: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Verify user has access to this file via RLS-protected query
+  const { data: file } = await supabase
+    .from("files")
+    .select("id")
+    .eq("storage_path", storagePath)
+    .single();
+
+  if (!file) throw new Error("File not found or access denied");
+
   const { data } = await supabase.storage
     .from("documents")
     .createSignedUrl(storagePath, 3600);
@@ -82,13 +116,26 @@ export async function deleteFile(fileId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  // RLS on files table enforces that only authorized users can see this record
   const { data: file } = await supabase
     .from("files")
-    .select("storage_path, home_id")
+    .select("storage_path, home_id, builder_id")
     .eq("id", fileId)
     .single();
 
-  if (!file) throw new Error("File not found");
+  if (!file) throw new Error("File not found or access denied");
+
+  // Verify user is a builder owner (only owners can delete)
+  const { data: member } = await supabase
+    .from("memberships")
+    .select("role")
+    .eq("builder_id", file.builder_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!member || member.role !== "owner") {
+    throw new Error("Only builder owners can delete files");
+  }
 
   // Delete from storage
   await supabase.storage.from("documents").remove([file.storage_path]);

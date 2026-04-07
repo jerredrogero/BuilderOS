@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ITEM_TYPES } from "@/lib/types/database";
 
 const templateItemSchema = z.object({
-  type: z.enum(["document", "warranty", "utility", "info", "punch_list"], {
-    error: "Type must be one of: document, warranty, utility, info, punch_list",
+  type: z.enum(ITEM_TYPES, {
+    error: "Type must be one of: checklist, document, warranty, utility, info, punch_list",
   }),
   category: z.string().min(1, "Category is required"),
   title: z.string().min(1, "Title is required"),
@@ -53,10 +54,10 @@ function parseItemFields(formData: FormData) {
   } else if (type === "utility") {
     base.utility_type = (formData.get("utilityType") as string) || null;
     base.metadata = {
-      providerName: (formData.get("providerName") as string) || null,
-      providerPhone: (formData.get("providerPhone") as string) || null,
-      providerUrl: (formData.get("providerUrl") as string) || null,
-      transferInstructions: (formData.get("transferInstructions") as string) || null,
+      provider_name: (formData.get("providerName") as string) || null,
+      provider_phone: (formData.get("providerPhone") as string) || null,
+      provider_url: (formData.get("providerUrl") as string) || null,
+      transfer_instructions: (formData.get("transferInstructions") as string) || null,
     };
   } else if (type === "info") {
     base.metadata = {

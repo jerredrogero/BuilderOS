@@ -3,6 +3,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const buyerAssetSchema = z.object({
+  category: z.string().min(1, "Category is required"),
+  name: z.string().min(1, "Asset name is required"),
+  manufacturer: z.string().nullable(),
+  modelNumber: z.string().nullable(),
+  serialNumber: z.string().nullable(),
+  location: z.string().nullable(),
+});
 
 export async function createDraftAsset(homeId: string, formData: FormData) {
   const supabase = await createClient();
@@ -26,17 +36,32 @@ export async function createDraftAsset(homeId: string, formData: FormData) {
 
   if (!home) throw new Error("Home not found");
 
+  const parsed = buyerAssetSchema.safeParse({
+    category: formData.get("category") || "Other",
+    name: formData.get("name"),
+    manufacturer: (formData.get("manufacturer") as string) || null,
+    modelNumber: (formData.get("modelNumber") as string) || null,
+    serialNumber: (formData.get("serialNumber") as string) || null,
+    location: (formData.get("location") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
+  const { category, name, manufacturer, modelNumber, serialNumber, location } = parsed.data;
+
   const { data: asset, error } = await supabase
     .from("home_assets")
     .insert({
       home_id: homeId,
       builder_id: home.builder_id,
-      category: formData.get("category") as string || "Other",
-      name: formData.get("name") as string,
-      manufacturer: formData.get("manufacturer") as string || null,
-      model_number: formData.get("modelNumber") as string || null,
-      serial_number: formData.get("serialNumber") as string || null,
-      location: formData.get("location") as string || null,
+      category,
+      name,
+      manufacturer,
+      model_number: modelNumber,
+      serial_number: serialNumber,
+      location,
     })
     .select()
     .single();
@@ -56,6 +81,13 @@ export async function createDraftAsset(homeId: string, formData: FormData) {
   redirect(`/home/${homeId}/assets/${asset.id}`);
 }
 
+const buyerAssetUpdateSchema = z.object({
+  manufacturer: z.string().nullable(),
+  modelNumber: z.string().nullable(),
+  serialNumber: z.string().nullable(),
+  location: z.string().nullable(),
+});
+
 export async function updateAssetFromBuyer(homeId: string, assetId: string, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -70,13 +102,26 @@ export async function updateAssetFromBuyer(homeId: string, assetId: string, form
 
   if (!assignment) throw new Error("Access denied");
 
+  const parsed = buyerAssetUpdateSchema.safeParse({
+    manufacturer: (formData.get("manufacturer") as string) || null,
+    modelNumber: (formData.get("modelNumber") as string) || null,
+    serialNumber: (formData.get("serialNumber") as string) || null,
+    location: (formData.get("location") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
+  const { manufacturer, modelNumber, serialNumber, location } = parsed.data;
+
   const { error } = await supabase
     .from("home_assets")
     .update({
-      manufacturer: formData.get("manufacturer") as string || null,
-      model_number: formData.get("modelNumber") as string || null,
-      serial_number: formData.get("serialNumber") as string || null,
-      location: formData.get("location") as string || null,
+      manufacturer,
+      model_number: modelNumber,
+      serial_number: serialNumber,
+      location,
       updated_at: new Date().toISOString(),
     })
     .eq("id", assetId);
@@ -102,7 +147,7 @@ export async function uploadBuyerAssetPhoto(homeId: string, assetId: string, for
 
   const file = formData.get("file") as File;
   if (!file) throw new Error("No file provided");
-  if (file.size > 25 * 1024 * 1024) throw new Error("File too large");
+  if (file.size > 25 * 1024 * 1024) throw new Error("File too large. Maximum 25MB.");
 
   const { data: asset } = await supabase
     .from("home_assets")

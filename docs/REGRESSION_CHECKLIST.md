@@ -83,9 +83,9 @@ Regression test plan for auth, RLS, invitations, reminders, files, and buyer red
 - [ ] Original invitation link is still valid (or properly invalidated)
 
 ### Expiry
-- [ ] Invitation expiry status exists in schema
-- [ ] Expired invitations cannot be accepted (if expiry is enforced)
-- [ ] Note: expiry enforcement may not be implemented — verify and document
+- [ ] Invitation `expires_at` column exists (7-day window set on creation)
+- [ ] Expired invitations cannot be accepted (enforced at magic-link generation and accept-invite)
+- [ ] Resending an invitation resets the expiry window
 
 ### Edge Cases
 - [ ] Inviting a user who already has an account works correctly

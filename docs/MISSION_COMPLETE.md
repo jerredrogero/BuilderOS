@@ -1,6 +1,6 @@
 # BuilderOS MVP — Mission Complete Checklist
 
-**Mission:** BuilderOS Final Closeout
+**Mission:** BuilderOS Final Closeout + Stabilization Sprint
 **Date:** 2026-04-07
 **Branch:** main
 
@@ -53,8 +53,22 @@ These are documented in `docs/KNOWN_GAPS.md` and are intentionally deferred:
 5. **Unstyled flash on buyer pages** (#21) — Brief flash possible on slow connections
 6. **Advanced theming** (#22) — Only primary/accent colors; no custom fonts or layouts
 
+## Stabilization Sprint (2026-04-07)
+
+After MVP feature completion, a stabilization sprint addressed internal consistency:
+
+| Area | What Changed |
+|------|-------------|
+| Contract Normalization | Metadata standardized to snake_case; canonical types: document, warranty, utility, checklist, info, punch_list; types consolidated in `database.ts` |
+| Validation Hardening | Zod schemas added to projects, builders, buyer-items, buyer-assets; all mutations use `safeParse` before DB writes |
+| Test Coverage | Behavioral regression tests for routing, readiness, invitations, file access, and buyer workflows |
+| Storage Security | Storage policies scoped to builder/buyer; auth checks on `uploadFile`, `getFileUrl`, `deleteFile`; migration `20260407000003` |
+| Documentation | README rewritten with architecture, setup, testing; all docs updated to reflect corrected system |
+
 ## Key Technical Decisions
 
 - **Login redirect to `/`:** Rather than redirecting to a role-specific URL from the login action, all authenticated users go to `/` which inspects memberships and home assignments to determine the correct destination. This keeps the login action simple and centralizes routing logic.
 - **Server-side readiness enforcement:** The UI disables the "Mark Ready" button when checks fail, but the server action independently validates readiness. This prevents bypassing the gate via direct API calls.
 - **Invitation expiry:** 7-day window set on creation. Resend resets the clock. Expiry checked at magic-link generation, invite acceptance, and activation nudge.
+- **Zod validation discipline:** All create/update server actions validate input with Zod schemas before database writes. Raw form data never reaches the database without validation.
+- **Storage authorization:** File operations verify home/builder access at the application level, not just through RLS. Signed URLs are only generated after access checks pass.

@@ -3,8 +3,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { calculateCompletion } from "@/lib/utils/completion";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const markCompleteSchema = z.object({
+  homeId: z.string().uuid("Invalid home ID"),
+  itemId: z.string().uuid("Invalid item ID"),
+});
 
 export async function markItemComplete(homeId: string, itemId: string) {
+  const parsed = markCompleteSchema.safeParse({ homeId, itemId });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -90,6 +101,17 @@ export async function uploadProofFile(
   itemId: string,
   formData: FormData
 ) {
+  const idParsed = z
+    .object({
+      homeId: z.string().uuid("Invalid home ID"),
+      itemId: z.string().uuid("Invalid item ID"),
+    })
+    .safeParse({ homeId, itemId });
+
+  if (!idParsed.success) {
+    throw new Error(idParsed.error.issues.map((e) => e.message).join(", "));
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

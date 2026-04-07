@@ -45,21 +45,15 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 **Note:** Email sending will fail with a fake Resend key, but that's fine — Supabase local catches auth emails in Inbucket at http://127.0.0.1:54324.
 
-## 3. Apply Schema Migration
+## 3. Apply Migrations and Seed Data
 
 ```bash
 npx supabase db reset
 ```
 
-This applies `supabase/migrations/001_initial_schema.sql` and creates all tables, indexes, RLS policies, and the storage bucket.
+This applies all migrations in `supabase/migrations/` (in filename order) and runs `supabase/seed.sql`. It creates all tables, indexes, RLS policies, the storage bucket, and demo data.
 
-## 4. Seed Demo Data
-
-```bash
-npx supabase db reset --seed
-```
-
-Or if schema is already applied, run the seed separately:
+To run the seed separately (if schema is already applied):
 
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed.sql
@@ -72,7 +66,7 @@ This creates:
 - One home with cloned template items and computed deadlines
 - An accepted invitation linking the buyer to the home
 
-## 5. Start the App
+## 4. Start the App
 
 ```bash
 npm run dev
@@ -80,7 +74,7 @@ npm run dev
 
 App runs at http://localhost:3000.
 
-## 6. Start Inngest Dev Server (optional)
+## 5. Start Inngest Dev Server (optional)
 
 In a separate terminal:
 
@@ -112,6 +106,31 @@ This connects to the Inngest functions and lets you trigger them manually from t
 npx supabase stop     # Stop local Supabase
 # Ctrl+C to stop Next.js dev server
 ```
+
+## 6. Run Tests
+
+```bash
+npm run test:run    # Run tests once
+npm test            # Watch mode
+```
+
+Tests use Vitest with jsdom. Test files are in `tests/`.
+
+## 7. Lint
+
+```bash
+npm run lint
+```
+
+## 8. Generate Database Types
+
+After changing the schema, regenerate TypeScript types:
+
+```bash
+npm run db:gen-types
+```
+
+This writes to `src/lib/types/database.ts`.
 
 ## Troubleshooting
 

@@ -66,6 +66,7 @@ export default async function TemplateDetailPage({ params }: Props) {
     warranty: "Warranty",
     utility: "Utility",
     info: "Info",
+    punch_list: "Punch List",
   };
 
   return (

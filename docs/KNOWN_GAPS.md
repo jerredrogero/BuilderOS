@@ -115,11 +115,37 @@
 ### Remaining (6 gaps — out of scope for MVP)
 - Email confirmation (#3), drag-to-reorder (#7), slug collision (#19), template item limits (#20), unstyled flash (#21), advanced theming (#22)
 
+## Stabilization Sprint (2026-04-07)
+
+Sprint focused on internal consistency, testability, and safety — not new features.
+
+### Priority 1 — Contract Normalization (DONE)
+- Metadata convention standardized to snake_case everywhere
+- Canonical item types: `document`, `warranty`, `utility`, `checklist`, `info`, `punch_list`
+- Type definitions consolidated in `src/lib/types/database.ts`
+- Seed data, actions, forms, and UI all use the same field names and metadata shapes
+
+### Priority 2 — Validation Hardening (DONE)
+- Zod schemas added to `projects.ts` (create/update), `builders.ts` (settings), `buyer-items.ts` (markComplete/uploadProof UUID validation), `buyer-assets.ts` (create/update)
+- All create/update actions now use `safeParse` before database writes
+
+### Priority 3 — Test Coverage (DONE)
+- Behavioral tests for: login redirect, buyer routing, readiness enforcement, invitation flow, file access, buyer proof/document workflow
+- Placeholder tests replaced with assertions that validate real behavior
+
+### Priority 4 — Storage Security (DONE)
+- Storage policies replaced broad auth-only rules with builder/buyer-scoped policies
+- Authorization checks added to `uploadFile()`, `getFileUrl()`, and `deleteFile()` in `files.ts`
+- New migration: `20260407000003_tighten_storage_policies.sql`
+
+### Priority 5 — Documentation (DONE)
+- README rewritten with full architecture overview, setup instructions, and testing guide
+- Stale documentation updated to match corrected system state
+
 ### Infrastructure
-- README.md replaced with product documentation
 - TypeScript build passes clean (zero errors)
-- Zod v4 installed and integrated across 4 server action files
+- Zod v4 integrated across all server action files
 - Server-side readiness enforcement in `updateHomeStatus` validates items + document count before allowing `ready` status
 - Login redirects to `/` which performs role-aware routing: builders → `/dashboard`, buyers → `/home/{id}` (single home) or chooser (multiple homes)
 - Template file cloning operational on home creation
-- Regression test suite added for routing, readiness, and invitation flows
+- Regression test suite covers highest-risk workflow paths
