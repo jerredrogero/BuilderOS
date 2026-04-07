@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const templateSchema = z.object({
+  name: z.string().min(1, "Template name is required").max(255, "Template name is too long"),
+  description: z.string().max(1000, "Description is too long").nullable(),
+});
 
 export async function createTemplate(formData: FormData) {
   const supabase = await createClient();
@@ -13,12 +19,21 @@ export async function createTemplate(formData: FormData) {
     throw new Error("Unauthorized");
   }
 
+  const parsed = templateSchema.safeParse({
+    name: formData.get("name"),
+    description: (formData.get("description") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
   const { data, error } = await supabase
     .from("templates")
     .insert({
       builder_id: context.builder.id,
-      name: formData.get("name") as string,
-      description: (formData.get("description") as string) || null,
+      name: parsed.data.name,
+      description: parsed.data.description,
     })
     .select()
     .single();
@@ -37,11 +52,20 @@ export async function updateTemplate(templateId: string, formData: FormData) {
     throw new Error("Unauthorized");
   }
 
+  const parsed = templateSchema.safeParse({
+    name: formData.get("name"),
+    description: (formData.get("description") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
   const { error } = await supabase
     .from("templates")
     .update({
-      name: formData.get("name") as string,
-      description: (formData.get("description") as string) || null,
+      name: parsed.data.name,
+      description: parsed.data.description,
       updated_at: new Date().toISOString(),
     })
     .eq("id", templateId)

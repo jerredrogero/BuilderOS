@@ -176,6 +176,54 @@ export async function updateHomeStatus(homeId: string, status: string) {
     throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
   }
 
+  // Enforce readiness checks before allowing transition to "ready"
+  if (parsed.data.status === "ready") {
+    const [{ data: items }, { count: docCount }] = await Promise.all([
+      supabase
+        .from("home_items")
+        .select("type, manufacturer, status, metadata")
+        .eq("home_id", homeId),
+      supabase
+        .from("files")
+        .select("id", { count: "exact", head: true })
+        .eq("home_id", homeId),
+    ]);
+
+    const homeItems = items ?? [];
+    const hasDocuments = (docCount ?? 0) > 0;
+
+    const warrantyItems = homeItems.filter((i) => i.type === "warranty");
+    const utilityItems = homeItems.filter((i) => i.type === "utility");
+
+    const failures: string[] = [];
+
+    if (!hasDocuments) {
+      failures.push("At least one document must be uploaded");
+    }
+
+    if (
+      warrantyItems.length > 0 &&
+      !warrantyItems.every(
+        (i) => i.manufacturer || i.status === "not_applicable"
+      )
+    ) {
+      failures.push("All warranty items must have a manufacturer or be marked not applicable");
+    }
+
+    if (
+      utilityItems.length > 0 &&
+      !utilityItems.every(
+        (i) => i.metadata?.provider_name || i.status === "not_applicable"
+      )
+    ) {
+      failures.push("All utility items must have a provider or be marked not applicable");
+    }
+
+    if (failures.length > 0) {
+      throw new Error(`Readiness checks not met: ${failures.join("; ")}`);
+    }
+  }
+
   const { error } = await supabase
     .from("homes")
     .update({ handoff_status: status, updated_at: new Date().toISOString() })
