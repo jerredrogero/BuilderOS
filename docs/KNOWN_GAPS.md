@@ -43,9 +43,9 @@
 
 ### Invitation Flow
 
-14. **Magic link flow untested** — *IN PROGRESS (T6).* The flow needs end-to-end testing with Inbucket in local dev.
+14. ~~**Magic link flow untested**~~ — **Fixed.** Magic link route now validates invitation state (exists, not accepted, not expired) before generating link. Accept-invite page handles all error states with clear messages. URL bug fixed (/invite/ → /accept-invite?token=) (T6).
 
-15. **No invitation expiry** — *IN PROGRESS (T6).* Invitations have an `expired` status but expiry enforcement is being added.
+15. ~~**No invitation expiry**~~ — **Fixed.** Invitations now have `expires_at` set to 7 days on creation. Expiry checked at magic-link generation, accept-invite, and activation-nudge. Resend resets expiry. Migration added for `expires_at` column (T6).
 
 ### Reminder Engine
 
@@ -95,17 +95,15 @@
 
 ## MVP Swarm Summary (2026-04-07)
 
-### Completed (13 of 22 gaps resolved)
+### Completed (15 of 22 gaps resolved)
 - **Auth:** Error display (#1), password reset (#2), buyer redirect (#4)
 - **Builder Admin:** Readiness gate enforcement (#5), inline editing (#6), logo upload (#8), template file upload (#9), delete confirmations (#10)
 - **Buyer Experience:** Multi-home navigation (#11), file download (#12), proof upload verified (#13)
+- **Invitations:** Magic link hardened (#14), invitation expiry implemented (#15)
 - **Reminders:** Error handling for Resend (#16), dedup stability (#17)
 - **Data:** Server-side Zod validation (#18)
 
-### In Progress (2 gaps)
-- Invitation flow: magic link testing (#14), invitation expiry (#15)
-
-### Remaining (7 gaps — out of scope for this mission)
+### Remaining (5 gaps — out of scope for this mission)
 - Email confirmation (#3), drag-to-reorder (#7), slug collision (#19), template item limits (#20), unstyled flash (#21), advanced theming (#22)
 
 ### Infrastructure
