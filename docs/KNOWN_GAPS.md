@@ -122,24 +122,32 @@ Sprint focused on internal consistency, testability, and safety — not new feat
 ### Priority 1 — Contract Normalization (DONE)
 - Metadata convention standardized to snake_case everywhere
 - Canonical item types: `document`, `warranty`, `utility`, `checklist`, `info`, `punch_list`
+- Two type sets: `ITEM_TYPES` (all 6) for DB/display, `FORM_ITEM_TYPES` (5, no `punch_list`) for template/home item forms
 - Type definitions consolidated in `src/lib/types/database.ts`
 - Seed data, actions, forms, and UI all use the same field names and metadata shapes
+- Canonical contract spec published: [`docs/CANONICAL_CONTRACTS.md`](CANONICAL_CONTRACTS.md)
 
 ### Priority 2 — Validation Hardening (DONE)
 - Zod schemas added to `projects.ts` (create/update), `builders.ts` (settings), `buyer-items.ts` (markComplete/uploadProof UUID validation), `buyer-assets.ts` (create/update)
-- All create/update actions now use `safeParse` before database writes
+- `home-items.ts` now has full Zod validation on all 3 mutation paths (status update, inline edit, delete): UUID params, status enum, item type, type-specific fields (warranty, utility metadata)
+- All create/update actions now use `safeParse` before database writes — no raw FormData reaches the database
 
 ### Priority 3 — Test Coverage (DONE)
+- 221 tests across 15 files — all passing
 - Behavioral tests for: login redirect, buyer routing, readiness enforcement, invitation flow, file access, buyer proof/document workflow
-- Placeholder tests replaced with assertions that validate real behavior
+- Item contract tests: validate type consistency across DB constraints, action schemas, and type definitions
+- Home-items validation tests: verify Zod enforcement on all mutation paths, type-specific field validation, error rejection
+- No placeholder tests remain — all assertions validate real behavior
 
 ### Priority 4 — Storage Security (DONE)
 - Storage policies replaced broad auth-only rules with builder/buyer-scoped policies
 - Authorization checks added to `uploadFile()`, `getFileUrl()`, and `deleteFile()` in `files.ts`
 - New migration: `20260407000003_tighten_storage_policies.sql`
+- Three-layer security model documented: [`docs/STORAGE_SECURITY.md`](STORAGE_SECURITY.md)
 
 ### Priority 5 — Documentation (DONE)
-- README rewritten with full architecture overview, setup instructions, and testing guide
+- README rewritten with full architecture overview, setup instructions, testing guide, and release status section
+- Canonical contracts spec and storage security model documented
 - Stale documentation updated to match corrected system state
 
 ### Infrastructure
@@ -148,4 +156,4 @@ Sprint focused on internal consistency, testability, and safety — not new feat
 - Server-side readiness enforcement in `updateHomeStatus` validates items + document count before allowing `ready` status
 - Login redirects to `/` which performs role-aware routing: builders → `/dashboard`, buyers → `/home/{id}` (single home) or chooser (multiple homes)
 - Template file cloning operational on home creation
-- Regression test suite covers highest-risk workflow paths
+- Regression test suite: 221 tests across 15 files covering highest-risk workflow paths

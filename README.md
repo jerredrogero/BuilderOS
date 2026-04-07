@@ -178,12 +178,14 @@ The seed creates Oakwood Builders with one project ("Oakwood Estates Phase 1"), 
 
 All tables use RLS policies. Builder data is isolated by `builder_id`. Buyer access is scoped through `home_assignments`.
 
+> **Canonical contracts:** The authoritative item-type and metadata contracts are defined in [`docs/CANONICAL_CONTRACTS.md`](docs/CANONICAL_CONTRACTS.md). Six item types are supported (`document`, `warranty`, `utility`, `checklist`, `info`, `punch_list`). Template forms use a 5-type subset (excluding `punch_list`, which is created through the punch list / inspection workflow). All metadata uses snake_case. See the spec for type-specific fields and validation rules.
+
 ### Server Actions
 
 All mutations go through server actions in `src/lib/actions/`. Every create/update action uses Zod validation before database writes:
 - `homes.ts` — Home CRUD, status management, readiness enforcement
 - `template-items.ts` — Template item CRUD with type-specific validation
-- `home-items.ts` — Item status updates
+- `home-items.ts` — Item status updates, inline editing, and deletion with full Zod validation (type-specific fields, UUID params, status enum)
 - `inspection-reports.ts` — Inspection report management
 - `home-assets.ts` — Asset management
 - `invitations.ts` — Invitation send, resend, accept with expiry checks
@@ -224,11 +226,48 @@ npm run test:run
 
 Tests use Vitest with jsdom environment. Test files live in `tests/` and follow the source directory structure.
 
-Current test coverage:
-- **Routing** — Post-login role-based redirect logic
+Current test coverage (221 tests across 15 files):
+- **Routing** — Post-login role-based redirect logic, login page contract verification
 - **Readiness** — Server-side readiness check validation
 - **Completion** — Percentage calculation across item statuses
 - **Priority** — Item priority ranking algorithm
+- **Item contracts** — Canonical item-type consistency across DB constraints, action schemas, and type definitions
+- **Home-items validation** — Zod schema enforcement for create/update/status/delete mutations, type-specific field validation, error rejection
+- **Buyer workflows** — Proof upload, document access, buyer routing
+- **File access** — Signed URL generation, authorization checks
+- **Middleware** — Auth session refresh, route protection behavior
+
+## Current Release Status
+
+BuilderOS is a **release candidate** — feature-complete for the core MVP flow with a stabilization pass applied.
+
+### Stable and regression-tested
+
+- **Authentication** — Login, signup, password reset, magic-link invitations with 7-day expiry
+- **Role-based routing** — Root route detects auth state and redirects builders to `/dashboard`, buyers to `/home/{id}` (or multi-home chooser)
+- **Readiness gate** — Server-side enforcement: homes cannot be marked "ready" until all checks pass
+- **Multi-tenant isolation** — RLS policies on all tables, application-level membership checks
+- **Template and home CRUD** — Full lifecycle with template cloning, deadline computation, file attachment
+- **Buyer portal** — Guided checklist, warranty registration, utility transfer, proof upload, document vault
+
+### Hardened in stabilization sprint (2026-04-07)
+
+- **Item-type contracts** — Unified across DB constraints, action schemas, forms, and UI. Canonical spec at [`docs/CANONICAL_CONTRACTS.md`](docs/CANONICAL_CONTRACTS.md)
+- **Home-item validation** — All mutation paths (status update, inline edit, delete) now use Zod schemas with type-specific field validation
+- **Storage policies** — Tightened from broad authenticated access to builder/buyer-scoped RLS. Three-layer model documented at [`docs/STORAGE_SECURITY.md`](docs/STORAGE_SECURITY.md)
+- **Test coverage** — 221 tests across 15 files. No placeholder tests remain. Critical workflows (routing, readiness, item contracts, validation, buyer flows) are regression-protected
+
+### How to verify correctness
+
+```bash
+npm run test:run       # 221 tests must pass
+npm run lint           # ESLint must pass
+npx tsc --noEmit       # TypeScript must compile clean
+```
+
+### Remaining out-of-scope items
+
+Six items are deferred to post-MVP: email confirmation, drag-to-reorder, slug collision handling, template item limits, unstyled flash on slow connections, advanced theming. See [`docs/KNOWN_GAPS.md`](docs/KNOWN_GAPS.md) for details.
 
 ## Linting
 
@@ -258,6 +297,8 @@ npx supabase stop     # Stop local Supabase
 
 - [`docs/LOCAL_RUNBOOK.md`](docs/LOCAL_RUNBOOK.md) — Detailed local development setup
 - [`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md) — End-to-end demo script with verification checklist
+- [`docs/CANONICAL_CONTRACTS.md`](docs/CANONICAL_CONTRACTS.md) — Authoritative item-type and metadata contracts
+- [`docs/STORAGE_SECURITY.md`](docs/STORAGE_SECURITY.md) — Three-layer storage security model documentation
 - [`docs/KNOWN_GAPS.md`](docs/KNOWN_GAPS.md) — Known limitations and deferred items
 - [`docs/REGRESSION_CHECKLIST.md`](docs/REGRESSION_CHECKLIST.md) — Manual regression test plan
 

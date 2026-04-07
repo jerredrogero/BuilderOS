@@ -164,32 +164,56 @@ describe("Post-login routing (root page /)", () => {
     expect(mockGetBuyerHomes).not.toHaveBeenCalled();
   });
 
-  it("login page directs to / (not /dashboard) ensuring role router runs", () => {
-    // This is a static assertion about the login page behavior.
-    // The login page calls router.push("/") — the root route IS the role router.
+  it("login page directs to / (not /dashboard) ensuring role router runs", async () => {
+    // The login page must call router.push("/") so the root role-router runs.
     // If someone changes login to push("/dashboard") directly, buyers break.
-    //
-    // We verify this by checking the login page source contains router.push("/")
-    // Since login is a client component, we can't easily render it in vitest/jsdom
-    // without full Next.js environment. Instead, this test documents the contract.
-    expect(true).toBe(true); // placeholder — see e2e cert for runtime check
+    // We verify this by reading the login page source and checking for the pattern.
+    const fs = await import("fs");
+    const path = await import("path");
+    const loginSource = fs.readFileSync(
+      path.resolve(__dirname, "../src/app/(auth)/login/page.tsx"),
+      "utf-8"
+    );
+    // The login page must push to "/" — the root role-aware router
+    expect(loginSource).toContain('router.push("/")');
+    // It must NOT push directly to /dashboard (bypasses role routing)
+    expect(loginSource).not.toContain('router.push("/dashboard")');
   });
 });
 
-describe("Middleware auth protection", () => {
-  // Middleware is harder to unit test because it uses NextRequest/NextResponse.
-  // These tests document the expected contract for protected routes.
-  // Full middleware testing belongs in e2e (T4).
+describe("Middleware auth protection — source contract", () => {
+  // Verifies the middleware source protects the expected routes.
+  // Full behavioral middleware tests live in tests/middleware.test.ts.
+  // These tests catch drift between the middleware source and the expected route list.
 
-  it("documents protected builder routes", () => {
-    const builderRoutes = ["/dashboard", "/settings", "/projects", "/templates", "/homes"];
-    // Assert the list is complete — if a new builder route is added without
-    // middleware protection, this test should be updated.
-    expect(builderRoutes).toHaveLength(5);
+  let middlewareSource: string;
+
+  beforeEach(async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    middlewareSource = fs.readFileSync(
+      path.resolve(__dirname, "../middleware.ts"),
+      "utf-8"
+    );
   });
 
-  it("documents protected buyer routes", () => {
-    const buyerRoutes = ["/home/"];
-    expect(buyerRoutes).toHaveLength(1);
+  const expectedBuilderRoutes = ["/dashboard", "/settings", "/projects", "/templates", "/homes"];
+
+  for (const route of expectedBuilderRoutes) {
+    it(`middleware source protects builder route ${route}`, () => {
+      expect(middlewareSource).toContain(`pathname.startsWith("${route}")`);
+    });
+  }
+
+  it("middleware source protects buyer route /home/", () => {
+    expect(middlewareSource).toContain('pathname.startsWith("/home/")');
+  });
+
+  it("middleware redirects unauthenticated users to /login", () => {
+    expect(middlewareSource).toContain('url.pathname = "/login"');
+  });
+
+  it("middleware preserves buyer redirect path in searchParams", () => {
+    expect(middlewareSource).toContain('searchParams.set("redirect"');
   });
 });

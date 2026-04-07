@@ -4,11 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ITEM_TYPES } from "@/lib/types/database";
+import { FORM_ITEM_TYPES } from "@/lib/types/database";
 
 const templateItemSchema = z.object({
-  type: z.enum(ITEM_TYPES, {
-    error: "Type must be one of: checklist, document, warranty, utility, info, punch_list",
+  type: z.enum(FORM_ITEM_TYPES, {
+    error: "Type must be one of: checklist, document, warranty, utility, info",
   }),
   category: z.string().min(1, "Category is required"),
   title: z.string().min(1, "Title is required"),

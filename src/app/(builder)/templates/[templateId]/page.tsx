@@ -10,6 +10,7 @@ import {
   uploadTemplateFile,
   deleteTemplateFile,
 } from "@/lib/actions/template-items";
+import { ITEM_TYPE_LABELS } from "@/lib/types/database";
 import { FileRow } from "@/components/file-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,15 +60,6 @@ export default async function TemplateDetailPage({ params }: Props) {
     acc[item.category].push(item);
     return acc;
   }, {});
-
-  const TYPE_LABELS: Record<string, string> = {
-    checklist: "Checklist",
-    document: "Document",
-    warranty: "Warranty",
-    utility: "Utility",
-    info: "Info",
-    punch_list: "Punch List",
-  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -191,7 +183,7 @@ export default async function TemplateDetailPage({ params }: Props) {
                       >
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline">
-                            {TYPE_LABELS[item.type] ?? item.type}
+                            {ITEM_TYPE_LABELS[item.type as keyof typeof ITEM_TYPE_LABELS] ?? item.type}
                           </Badge>
                           <span className="text-sm">{item.title}</span>
                           {item.is_critical && (
