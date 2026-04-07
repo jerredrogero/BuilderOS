@@ -61,8 +61,20 @@ src/
     └── inngest/       # Background job definitions
 ```
 
+## Core MVP Flow
+
+1. **Builder** signs up → starter template created automatically
+2. **Builder** creates a home from a template → items and files cloned
+3. **Builder** completes readiness checks → server enforces all checks pass before allowing "ready" status
+4. **Builder** invites a buyer via email → magic-link invitation sent
+5. **Buyer** accepts invite → account created and linked to home
+6. **Buyer** logs in → routed to their assigned home (or multi-home chooser if multiple)
+7. **Buyer** works through guided checklist → warranties, documents, utilities, inspections
+
 ## Documentation
 
 - [`docs/LOCAL_RUNBOOK.md`](docs/LOCAL_RUNBOOK.md) — Local development setup
 - [`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md) — End-to-end demo script
 - [`docs/KNOWN_GAPS.md`](docs/KNOWN_GAPS.md) — Known limitations and planned fixes
+- [`docs/MISSION_COMPLETE.md`](docs/MISSION_COMPLETE.md) — MVP mission closeout checklist
+- [`docs/REGRESSION_CHECKLIST.md`](docs/REGRESSION_CHECKLIST.md) — Manual regression checklist

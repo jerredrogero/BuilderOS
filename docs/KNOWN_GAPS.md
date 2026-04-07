@@ -104,18 +104,22 @@
 
 ## MVP Swarm Summary (2026-04-07)
 
-### Completed (15 of 22 gaps resolved)
+### Completed (16 of 22 gaps resolved)
 - **Auth:** Error display (#1), password reset (#2), buyer redirect (#4)
-- **Builder Admin:** Readiness gate enforcement (#5), inline editing (#6), logo upload (#8), template file upload (#9), delete confirmations (#10)
+- **Builder Admin:** Readiness gate enforcement (#5, server-side), inline editing (#6), logo upload (#8), template file upload (#9), delete confirmations (#10)
 - **Buyer Experience:** Multi-home navigation (#11), file download (#12), proof upload verified (#13)
 - **Invitations:** Magic link hardened (#14), invitation expiry implemented (#15)
 - **Reminders:** Error handling for Resend (#16), dedup stability (#17)
 - **Data:** Server-side Zod validation (#18)
 
-### Remaining (5 gaps — out of scope for this mission)
+### Remaining (6 gaps — out of scope for MVP)
 - Email confirmation (#3), drag-to-reorder (#7), slug collision (#19), template item limits (#20), unstyled flash (#21), advanced theming (#22)
 
 ### Infrastructure
 - README.md replaced with product documentation
 - TypeScript build passes clean (zero errors)
 - Zod v4 installed and integrated across 4 server action files
+- Server-side readiness enforcement in `updateHomeStatus` validates items + document count before allowing `ready` status
+- Login redirects to `/` which performs role-aware routing: builders → `/dashboard`, buyers → `/home/{id}` (single home) or chooser (multiple homes)
+- Template file cloning operational on home creation
+- Regression test suite added for routing, readiness, and invitation flows
