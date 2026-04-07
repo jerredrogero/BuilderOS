@@ -1,6 +1,7 @@
 import { getHomeAsset } from "@/lib/queries/home-assets";
 import { updateHomeAsset, deleteHomeAsset, uploadAssetPhoto } from "@/lib/actions/home-assets";
 import { AssetForm } from "@/components/builder/asset-form";
+import { FileRow } from "@/components/file-row";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,15 +73,7 @@ export default async function AssetDetailPage({
           {photos.length > 0 && (
             <div className="space-y-2">
               {photos.map((photo: any) => (
-                <div key={photo.id} className="flex items-center justify-between rounded-md border p-3">
-                  <div>
-                    <p className="text-sm font-medium">{photo.filename}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {photo.size_bytes ? `${Math.round(photo.size_bytes / 1024)}KB` : ""} · {new Date(photo.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-xs">{photo.mime_type?.split("/")[1] || "file"}</Badge>
-                </div>
+                <FileRow key={photo.id} file={photo} />
               ))}
             </div>
           )}

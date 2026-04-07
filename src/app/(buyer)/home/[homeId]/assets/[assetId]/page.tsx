@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getHomeAsset } from "@/lib/queries/home-assets";
 import { updateAssetFromBuyer, uploadBuyerAssetPhoto } from "@/lib/actions/buyer-assets";
 import { AssetPhotoUpload } from "@/components/buyer/asset-photo-upload";
+import { FileRow } from "@/components/file-row";
 import { getThemeStyles } from "@/lib/utils/theme";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,12 +82,7 @@ export default async function BuyerAssetDetailPage({
             {photos.length > 0 && (
               <div className="space-y-2">
                 {photos.map((photo: any) => (
-                  <div key={photo.id} className="flex items-center justify-between rounded-md border p-3">
-                    <p className="text-sm">{photo.filename}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(photo.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
+                  <FileRow key={photo.id} file={photo} />
                 ))}
               </div>
             )}

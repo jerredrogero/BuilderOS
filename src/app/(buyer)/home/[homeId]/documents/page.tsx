@@ -5,6 +5,7 @@ import { getThemeStyles } from "@/lib/utils/theme";
 import { uploadFile } from "@/lib/actions/files";
 import { getHomeFiles } from "@/lib/queries/files";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileRow } from "@/components/file-row";
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -108,22 +109,7 @@ export default async function BuyerDocumentsPage({
           <Card>
             <CardContent className="pt-6 space-y-2">
               {files.map((f: any) => (
-                <div
-                  key={f.id}
-                  className="flex items-center justify-between rounded border border-border px-3 py-2 text-sm"
-                >
-                  <span className="truncate font-medium">{f.filename}</span>
-                  <div className="ml-4 shrink-0 flex items-center gap-4 text-muted-foreground">
-                    <span>{formatBytes(f.size_bytes)}</span>
-                    <span>
-                      {new Date(f.created_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                </div>
+                <FileRow key={f.id} file={f} />
               ))}
             </CardContent>
           </Card>

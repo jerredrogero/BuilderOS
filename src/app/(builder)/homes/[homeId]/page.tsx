@@ -5,6 +5,7 @@ import { uploadFile } from "@/lib/actions/files";
 import { updateHomeItemStatus, deleteHomeItem } from "@/lib/actions/home-items";
 import { calculateCompletion } from "@/lib/utils/completion";
 import { ReadinessChecklist } from "@/components/builder/readiness-checklist";
+import { FileRow } from "@/components/file-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -234,19 +235,11 @@ export default async function HomeDetailPage({
             <Button type="submit">Upload</Button>
           </form>
           {files.length > 0 && (
-            <ul className="divide-y border rounded-md">
+            <div className="space-y-2">
               {files.map((f: any) => (
-                <li
-                  key={f.id}
-                  className="flex items-center justify-between px-3 py-2 text-sm"
-                >
-                  <span>{f.filename}</span>
-                  <span className="text-muted-foreground">
-                    {formatBytes(f.size_bytes)}
-                  </span>
-                </li>
+                <FileRow key={f.id} file={f} />
               ))}
-            </ul>
+            </div>
           )}
         </CardContent>
       </Card>

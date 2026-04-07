@@ -48,7 +48,7 @@ export default async function NewHomePage() {
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {projects?.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}

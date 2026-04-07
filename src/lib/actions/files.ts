@@ -76,3 +76,29 @@ export async function getFileUrl(storagePath: string) {
     .createSignedUrl(storagePath, 3600);
   return data?.signedUrl || null;
 }
+
+export async function deleteFile(fileId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: file } = await supabase
+    .from("files")
+    .select("storage_path, home_id")
+    .eq("id", fileId)
+    .single();
+
+  if (!file) throw new Error("File not found");
+
+  // Delete from storage
+  await supabase.storage.from("documents").remove([file.storage_path]);
+
+  // Delete DB record
+  await supabase.from("files").delete().eq("id", fileId);
+
+  if (file.home_id) {
+    revalidatePath(`/homes/${file.home_id}`);
+    revalidatePath(`/home/${file.home_id}`);
+    revalidatePath(`/home/${file.home_id}/documents`);
+  }
+}

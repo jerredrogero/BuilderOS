@@ -14,7 +14,8 @@ export async function createHome(formData: FormData) {
   }
 
   const templateId = (formData.get("templateId") as string) || null;
-  const projectId = (formData.get("projectId") as string) || null;
+  const rawProjectId = formData.get("projectId") as string;
+  const projectId = rawProjectId && rawProjectId !== "none" ? rawProjectId : null;
   const address = formData.get("address") as string;
   const lotNumber = (formData.get("lotNumber") as string) || null;
   const closeDate = formData.get("closeDate") as string;

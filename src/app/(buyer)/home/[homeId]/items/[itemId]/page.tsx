@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getThemeStyles } from "@/lib/utils/theme";
 import { markItemComplete, uploadProofFile } from "@/lib/actions/buyer-items";
+import { FileRow } from "@/components/file-row";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -395,15 +396,7 @@ export default async function BuyerItemDetailPage({
             </CardHeader>
             <CardContent className="space-y-2">
               {files.map((f: any) => (
-                <div
-                  key={f.id}
-                  className="flex items-center justify-between rounded border border-border px-3 py-2 text-sm"
-                >
-                  <span className="truncate font-medium">{f.filename}</span>
-                  <span className="ml-4 shrink-0 text-muted-foreground">
-                    {formatBytes(f.size_bytes)}
-                  </span>
-                </div>
+                <FileRow key={f.id} file={f} showDelete={false} />
               ))}
             </CardContent>
           </Card>
@@ -417,15 +410,7 @@ export default async function BuyerItemDetailPage({
             </CardHeader>
             <CardContent className="space-y-2">
               {files.map((f: any) => (
-                <div
-                  key={f.id}
-                  className="flex items-center justify-between rounded border border-border px-3 py-2 text-sm"
-                >
-                  <span className="truncate font-medium">{f.filename}</span>
-                  <span className="ml-4 shrink-0 text-muted-foreground">
-                    {formatBytes(f.size_bytes)}
-                  </span>
-                </div>
+                <FileRow key={f.id} file={f} showDelete={false} />
               ))}
             </CardContent>
           </Card>
