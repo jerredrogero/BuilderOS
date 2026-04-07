@@ -71,19 +71,28 @@
 
 - Multi-tenant isolation (RLS + application-level checks)
 - Builder signup with starter template
-- Full template CRUD with 5 item types
-- Home creation with template cloning and deadline computation
-- Readiness checklist (3 checks)
-- Invitation flow (send, resend, accept)
+- Full template CRUD with 5 item types and file upload
+- Home creation with template cloning (items + files) and deadline computation
+- Readiness checklist with enforced gate (3 checks, button disabled when incomplete)
+- Invitation flow (send, resend, accept, expiry, magic-link hardened)
 - Buyer dashboard with priority ranking and progress bar
-- All 5 item type detail views
-- Warranty registration flow with proof upload
-- Activity logging for all major actions
+- Buyer auto-redirect to assigned home after login
+- Buyer multi-home navigation (dropdown for users with multiple homes)
+- All 5 item type detail views with inline editing
+- Warranty registration flow with proof upload (verified end-to-end)
+- File download and view buttons across all buyer pages
+- Delete confirmation dialogs on projects, templates, and items
+- Logo upload in builder settings
+- Password reset flow
+- Activity logging for all major actions (including email failures)
 - Builder dashboard with status counts, overdue items, upcoming deadlines
-- Inngest reminder functions (3 cron jobs)
+- Inngest reminder functions (3 cron jobs) with error handling and failure logging
 - White-label branding (colors applied to buyer pages)
 - Completion percentage calculation (tested)
 - Priority ranking algorithm (tested)
+- Server-side Zod validation on critical server actions
+- Home assets summary, inspection reports with finding resolution, punch list management
+- Regression checklist (60+ items) and updated demo walkthrough with QA verification
 
 ## Priority Fixes for Demo Polish
 
