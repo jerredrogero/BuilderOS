@@ -160,7 +160,20 @@ ALTER TABLE template_items
   CHECK (type IN ('document', 'warranty', 'utility', 'checklist', 'info', 'punch_list'));
 
 -- =========================================================================
--- 7. RLS Policies for new tables
+-- 7. Query ergonomics indexes
+-- =========================================================================
+
+-- Files by asset (label photos, docs for a specific appliance)
+CREATE INDEX idx_files_home_asset ON files (home_asset_id) WHERE home_asset_id IS NOT NULL;
+
+-- Home items by asset (warranties, docs tied to a specific appliance)
+CREATE INDEX idx_home_items_asset ON home_items (home_asset_id) WHERE home_asset_id IS NOT NULL;
+
+-- Punch list queries (open tasks for a home)
+CREATE INDEX idx_home_items_punch_list ON home_items (home_id, status) WHERE type = 'punch_list';
+
+-- =========================================================================
+-- 8. RLS Policies for new tables
 -- =========================================================================
 
 ALTER TABLE home_assets ENABLE ROW LEVEL SECURITY;
