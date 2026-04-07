@@ -56,7 +56,7 @@ export default async function AcceptInvitePage({
       {
         user_id: user.id,
         builder_id: home.builder_id,
-        role: invitation.role ?? "primary_buyer",
+        role: "buyer",
       },
       { onConflict: "user_id,builder_id" }
     );
@@ -87,8 +87,10 @@ export default async function AcceptInvitePage({
     await serviceClient.from("activity_log").insert({
       builder_id: home.builder_id,
       home_id: home.id,
+      actor_type: "user" as const,
+      actor_id: user.id,
       action: "invitation_accepted",
-      payload: { user_id: user.id, invitation_id: invitation.id },
+      metadata: { invitation_id: invitation.id },
     });
 
     redirect(`/home/${home.id}`);

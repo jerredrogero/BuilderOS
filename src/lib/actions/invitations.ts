@@ -89,7 +89,7 @@ export async function sendInvitation(homeId: string, formData: FormData) {
     builder_id: context.builder.id,
     home_id: homeId,
     action: "invitation_sent",
-    payload: { email, invitation_id: invitation.id },
+    metadata: { email, invitation_id: invitation.id },
   });
 
   revalidatePath(`/homes/${homeId}`);

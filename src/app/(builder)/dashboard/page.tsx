@@ -142,7 +142,7 @@ export default async function DashboardPage() {
               {recentHomes.map((home: any) => {
                 const totalItems = home.home_items?.length ?? 0;
                 const completedItems =
-                  home.home_items?.filter((i: any) => i.status === "completed").length ?? 0;
+                  home.home_items?.filter((i: any) => i.status === "complete").length ?? 0;
                 const completionPct =
                   totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 

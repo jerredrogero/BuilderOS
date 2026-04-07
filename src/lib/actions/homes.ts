@@ -99,7 +99,7 @@ export async function createHome(formData: FormData) {
     builder_id: context.builder.id,
     home_id: home.id,
     action: "home_created",
-    payload: { address, lot_number: lotNumber },
+    metadata: { address, lot_number: lotNumber },
   });
 
   revalidatePath("/homes");
@@ -126,7 +126,7 @@ export async function updateHomeStatus(homeId: string, status: string) {
     builder_id: context.builder.id,
     home_id: homeId,
     action: "status_changed",
-    payload: { status },
+    metadata: { status },
   });
 
   revalidatePath(`/homes/${homeId}`);

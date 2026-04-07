@@ -8,7 +8,7 @@ export async function getHomes(filters?: { projectId?: string; status?: string }
 
   let query = supabase
     .from("homes")
-    .select("*, projects(name), invitations(status)")
+    .select("*, projects(name), invitations(status), home_items(is_critical, status)")
     .eq("builder_id", context.builder.id)
     .order("created_at", { ascending: false });
 
