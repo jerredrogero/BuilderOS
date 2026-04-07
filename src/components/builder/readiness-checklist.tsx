@@ -5,7 +5,8 @@ interface ReadinessChecklistProps {
   hasDocuments: boolean;
 }
 
-export function ReadinessChecklist({ items, hasDocuments }: ReadinessChecklistProps) {
+/** Compute readiness checks for a home. Reusable in server components. */
+export function computeReadinessChecks(items: any[], hasDocuments: boolean) {
   const warrantyItems = items.filter((i) => i.type === "warranty");
   const utilityItems = items.filter((i) => i.type === "utility");
 
@@ -37,6 +38,12 @@ export function ReadinessChecklist({ items, hasDocuments }: ReadinessChecklistPr
   ];
 
   const allPassed = checks.every((c) => c.passed);
+
+  return { checks, allPassed };
+}
+
+export function ReadinessChecklist({ items, hasDocuments }: ReadinessChecklistProps) {
+  const { checks, allPassed } = computeReadinessChecks(items, hasDocuments);
 
   return (
     <div className="space-y-2">

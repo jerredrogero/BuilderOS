@@ -13,12 +13,30 @@ import { Button } from "@/components/ui/button";
 export default async function AcceptInvitePage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string; sent?: string }>;
+  searchParams: Promise<{ token?: string; sent?: string; error?: string }>;
 }) {
-  const { token, sent } = await searchParams;
+  const { token, sent, error: errorParam } = await searchParams;
 
   if (!token) {
     return <ErrorCard message="Invalid or missing invitation link." />;
+  }
+
+  // Handle error states from the magic-link route
+  if (errorParam === "expired") {
+    return (
+      <ErrorCard message="This invitation has expired. Please contact your builder to request a new invitation." />
+    );
+  }
+  if (errorParam === "accepted") {
+    return <ErrorCard message="This invitation has already been accepted." />;
+  }
+  if (errorParam === "invalid") {
+    return <ErrorCard message="This invitation link is invalid." />;
+  }
+  if (errorParam === "email") {
+    return (
+      <ErrorCard message="We couldn't send the sign-in email. Please try again or contact your builder." />
+    );
   }
 
   const serviceClient = await createServiceClient();
@@ -36,6 +54,25 @@ export default async function AcceptInvitePage({
 
   if (invitation.status === "accepted") {
     return <ErrorCard message="This invitation has already been accepted." />;
+  }
+
+  // Check expiry
+  if (invitation.status === "expired") {
+    return (
+      <ErrorCard message="This invitation has expired. Please contact your builder to request a new invitation." />
+    );
+  }
+
+  if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
+    // Mark as expired
+    await serviceClient
+      .from("invitations")
+      .update({ status: "expired" })
+      .eq("id", invitation.id);
+
+    return (
+      <ErrorCard message="This invitation has expired. Please contact your builder to request a new invitation." />
+    );
   }
 
   // Check if user is logged in

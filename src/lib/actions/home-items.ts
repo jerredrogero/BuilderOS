@@ -89,18 +89,29 @@ export async function updateHomeItem(
 
   if (fetchError || !item) throw new Error("Item not found");
 
+  const type = formData.get("type") as string;
   const updates: Record<string, unknown> = {
+    type,
     title: formData.get("title") as string,
     description: formData.get("description") as string,
     category: formData.get("category") as string,
-    is_critical: formData.get("is_critical") === "true",
+    is_critical: formData.has("isCritical"),
   };
 
-  if (item.type === "warranty") {
+  if (type === "warranty") {
     updates.manufacturer = formData.get("manufacturer") as string;
-    updates.model_number = formData.get("model_number") as string;
-    updates.serial_number = formData.get("serial_number") as string;
-    updates.registration_url = formData.get("registration_url") as string;
+    updates.responsible_party = formData.get("responsibleParty") as string;
+    updates.registration_url = formData.get("registrationUrl") as string;
+  }
+
+  if (type === "utility") {
+    updates.utility_type = formData.get("utilityType") as string;
+    updates.metadata = {
+      provider_name: formData.get("providerName") as string,
+      provider_phone: formData.get("providerPhone") as string,
+      provider_url: formData.get("providerUrl") as string,
+      transfer_instructions: formData.get("transferInstructions") as string,
+    };
   }
 
   const { error } = await supabase

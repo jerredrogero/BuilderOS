@@ -6,6 +6,14 @@ import { resend } from "@/lib/email/client";
 import { InvitationEmail } from "@/lib/email/templates/invitation";
 import { revalidatePath } from "next/cache";
 
+const INVITATION_EXPIRY_DAYS = 7;
+
+function getExpiresAt(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + INVITATION_EXPIRY_DAYS);
+  return date.toISOString();
+}
+
 export async function sendInvitation(homeId: string, formData: FormData) {
   const supabase = await createClient();
   const context = await getCurrentBuilder();
@@ -28,7 +36,9 @@ export async function sendInvitation(homeId: string, formData: FormData) {
 
   if (homeError || !home) throw new Error("Home not found");
 
-  // Create invitation record
+  const now = new Date().toISOString();
+
+  // Create invitation record with expiry
   const { data: invitation, error: invError } = await supabase
     .from("invitations")
     .insert({
@@ -37,6 +47,7 @@ export async function sendInvitation(homeId: string, formData: FormData) {
       email,
       role,
       status: "pending",
+      expires_at: getExpiresAt(),
     })
     .select()
     .single();
@@ -71,7 +82,7 @@ export async function sendInvitation(homeId: string, formData: FormData) {
       .from("invitations")
       .update({
         status: "sent",
-        sent_at: new Date().toISOString(),
+        sent_at: now,
       })
       .eq("id", invitation.id);
 
@@ -79,7 +90,7 @@ export async function sendInvitation(homeId: string, formData: FormData) {
     if (home.handoff_status === "ready") {
       await supabase
         .from("homes")
-        .update({ handoff_status: "invited", updated_at: new Date().toISOString() })
+        .update({ handoff_status: "invited", updated_at: now })
         .eq("id", homeId);
     }
   }
@@ -133,11 +144,13 @@ export async function resendInvitation(homeId: string, invitationId: string) {
   if (emailError) {
     console.error("Failed to resend invitation email:", emailError);
   } else {
+    // Reset expiry on resend so the buyer gets a fresh window
     await supabase
       .from("invitations")
       .update({
         status: "sent",
         sent_at: new Date().toISOString(),
+        expires_at: getExpiresAt(),
         resend_count: (invitation.resend_count ?? 0) + 1,
       })
       .eq("id", invitationId);

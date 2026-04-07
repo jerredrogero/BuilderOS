@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDeleteButton } from "@/components/builder/confirm-delete-button";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -51,9 +52,11 @@ export default async function ProjectDetailPage({ params }: Props) {
             </div>
             <div className="flex gap-3 pt-2">
               <Button type="submit">Save Changes</Button>
-              <form action={deleteAction}>
-                <Button type="submit" variant="destructive">Delete Project</Button>
-              </form>
+              <ConfirmDeleteButton
+                action={deleteAction}
+                label="Delete Project"
+                description="Are you sure you want to delete this project? All homes associated with this project may be affected. This action cannot be undone."
+              />
             </div>
           </form>
         </CardContent>

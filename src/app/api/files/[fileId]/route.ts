@@ -25,10 +25,15 @@ export async function GET(
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 
-  // Generate signed URL
+  // Check if download is requested
+  const download = request.nextUrl.searchParams.get("download") === "true";
+
+  // Generate signed URL (with download option if requested)
   const { data } = await supabase.storage
     .from("documents")
-    .createSignedUrl(file.storage_path, 3600);
+    .createSignedUrl(file.storage_path, 3600, {
+      download: download ? file.filename : undefined,
+    });
 
   if (!data?.signedUrl) {
     return NextResponse.json({ error: "Failed to generate URL" }, { status: 500 });

@@ -24,6 +24,18 @@ export async function getHomes(filters?: { projectId?: string; status?: string }
   return data || [];
 }
 
+export async function getBuyerHomes(userId: string) {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("home_assignments")
+    .select("home_id, role, homes(address, lot_number, builders(name))")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  return data || [];
+}
+
 export async function getHome(homeId: string) {
   const supabase = await createClient();
   const context = await getCurrentBuilder();

@@ -2,9 +2,10 @@ import { getHome } from "@/lib/queries/homes";
 import { getHomeFiles } from "@/lib/queries/files";
 import { updateHomeStatus } from "@/lib/actions/homes";
 import { uploadFile } from "@/lib/actions/files";
-import { updateHomeItemStatus, deleteHomeItem } from "@/lib/actions/home-items";
+import { updateHomeItemStatus, updateHomeItem, deleteHomeItem } from "@/lib/actions/home-items";
 import { calculateCompletion } from "@/lib/utils/completion";
-import { ReadinessChecklist } from "@/components/builder/readiness-checklist";
+import { ReadinessChecklist, computeReadinessChecks } from "@/components/builder/readiness-checklist";
+import { EditItemDialog } from "@/components/builder/item-form";
 import { FileRow } from "@/components/file-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { sendInvitation, resendInvitation } from "@/lib/actions/invitations";
+import { HomeAssetsSummary } from "@/components/builder/home-assets-summary";
+import { HomeInspectionsSummary } from "@/components/builder/home-inspections-summary";
+import { PunchListSummary } from "@/components/builder/punch-list-summary";
 
 function statusVariant(
   status: string
@@ -90,6 +94,7 @@ export default async function HomeDetailPage({
     : home.address;
 
   const hasDocuments = files.length > 0;
+  const { allPassed: readinessAllPassed } = computeReadinessChecks(items, hasDocuments);
 
   // Group items by category
   const byCategory: Record<string, any[]> = {};
@@ -143,7 +148,14 @@ export default async function HomeDetailPage({
                 await updateHomeStatus(homeId, "ready");
               }}
             >
-              <Button type="submit">Mark Ready</Button>
+              <Button type="submit" disabled={!readinessAllPassed}>
+                Mark Ready
+              </Button>
+              {!readinessAllPassed && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  All readiness checks must pass before marking this home as ready.
+                </p>
+              )}
             </form>
           </CardContent>
         </Card>
@@ -244,6 +256,11 @@ export default async function HomeDetailPage({
         </CardContent>
       </Card>
 
+      {/* Assets, Inspections & Punch List summaries */}
+      <HomeAssetsSummary homeId={homeId} />
+      <HomeInspectionsSummary homeId={homeId} />
+      <PunchListSummary homeId={homeId} />
+
       {/* Items by category */}
       {Object.entries(byCategory).map(([category, catItems]) => (
         <Card key={category}>
@@ -273,6 +290,10 @@ export default async function HomeDetailPage({
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    <EditItemDialog
+                      item={item}
+                      action={updateHomeItem.bind(null, homeId, item.id)}
+                    />
                     <form
                       action={async () => {
                         "use server";

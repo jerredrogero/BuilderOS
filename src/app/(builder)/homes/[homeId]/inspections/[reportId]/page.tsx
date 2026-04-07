@@ -1,6 +1,6 @@
 import { getInspectionReport } from "@/lib/queries/inspection-reports";
 import { getHomeAssets } from "@/lib/queries/home-assets";
-import { createFinding, convertFindingToTask } from "@/lib/actions/inspection-reports";
+import { createFinding, convertFindingToTask, resolveFinding } from "@/lib/actions/inspection-reports";
 import { FindingCard } from "@/components/builder/finding-card";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,7 @@ export default async function ReportDetailPage({
               key={finding.id}
               finding={finding}
               convertAction={convertFindingToTask.bind(null, homeId, finding.id)}
+              resolveAction={resolveFinding.bind(null, homeId, reportId, finding.id)}
             />
           ))}
         </div>

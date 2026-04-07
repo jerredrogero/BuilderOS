@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -38,9 +46,11 @@ interface DefaultValues {
 interface ItemFormProps {
   action: (formData: FormData) => Promise<void>;
   defaultValues?: DefaultValues;
+  onCancel?: () => void;
+  submitLabel?: string;
 }
 
-export function ItemForm({ action, defaultValues }: ItemFormProps) {
+export function ItemForm({ action, defaultValues, onCancel, submitLabel = "Save" }: ItemFormProps) {
   const [type, setType] = useState(defaultValues?.type ?? "checklist");
 
   return (
@@ -217,9 +227,84 @@ export function ItemForm({ action, defaultValues }: ItemFormProps) {
         </div>
       )}
 
-      <Button type="submit" className="w-full">
-        Save
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1">
+          {submitLabel}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
+  );
+}
+
+interface EditItemDialogProps {
+  item: {
+    id: string;
+    type: string;
+    category: string;
+    title: string;
+    description?: string | null;
+    is_critical: boolean;
+    manufacturer?: string | null;
+    responsible_party?: string | null;
+    registration_url?: string | null;
+    utility_type?: string | null;
+    metadata?: {
+      provider_name?: string;
+      provider_phone?: string;
+      provider_url?: string;
+      transfer_instructions?: string;
+    } | null;
+  };
+  action: (formData: FormData) => Promise<void>;
+}
+
+export function EditItemDialog({ item, action }: EditItemDialogProps) {
+  const [open, setOpen] = useState(false);
+
+  const defaultValues: DefaultValues = {
+    type: item.type,
+    category: item.category,
+    title: item.title,
+    description: item.description ?? "",
+    isCritical: item.is_critical,
+    manufacturer: item.manufacturer ?? "",
+    responsibleParty: item.responsible_party ?? "",
+    registrationUrl: item.registration_url ?? "",
+    utilityType: item.utility_type ?? "",
+    providerName: item.metadata?.provider_name ?? "",
+    providerPhone: item.metadata?.provider_phone ?? "",
+    providerUrl: item.metadata?.provider_url ?? "",
+    transferInstructions: item.metadata?.transfer_instructions ?? "",
+  };
+
+  async function handleAction(formData: FormData) {
+    await action(formData);
+    setOpen(false);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Pencil className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Item</DialogTitle>
+        </DialogHeader>
+        <ItemForm
+          action={handleAction}
+          defaultValues={defaultValues}
+          onCancel={() => setOpen(false)}
+          submitLabel="Save Changes"
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

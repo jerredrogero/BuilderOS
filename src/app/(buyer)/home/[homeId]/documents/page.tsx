@@ -109,7 +109,7 @@ export default async function BuyerDocumentsPage({
           <Card>
             <CardContent className="pt-6 space-y-2">
               {files.map((f: any) => (
-                <FileRow key={f.id} file={f} />
+                <FileRow key={f.id} file={f} showDelete={false} />
               ))}
             </CardContent>
           </Card>

@@ -4,6 +4,24 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const createHomeSchema = z.object({
+  address: z.string().min(1, "Address is required"),
+  closeDate: z.string().min(1, "Close date is required").refine(
+    (val) => !isNaN(Date.parse(val)),
+    "Close date must be a valid date"
+  ),
+  templateId: z.string().uuid("Invalid template").nullable(),
+  projectId: z.string().uuid("Invalid project").nullable(),
+  lotNumber: z.string().nullable(),
+});
+
+const updateStatusSchema = z.object({
+  status: z.enum(["draft", "ready", "activated", "completed"], {
+    error: "Invalid handoff status",
+  }),
+});
 
 export async function createHome(formData: FormData) {
   const supabase = await createClient();
@@ -13,12 +31,22 @@ export async function createHome(formData: FormData) {
     throw new Error("Unauthorized");
   }
 
-  const templateId = (formData.get("templateId") as string) || null;
+  const rawTemplateId = (formData.get("templateId") as string) || null;
   const rawProjectId = formData.get("projectId") as string;
-  const projectId = rawProjectId && rawProjectId !== "none" ? rawProjectId : null;
-  const address = formData.get("address") as string;
-  const lotNumber = (formData.get("lotNumber") as string) || null;
-  const closeDate = formData.get("closeDate") as string;
+
+  const parsed = createHomeSchema.safeParse({
+    address: formData.get("address"),
+    closeDate: formData.get("closeDate"),
+    templateId: rawTemplateId || null,
+    projectId: rawProjectId && rawProjectId !== "none" ? rawProjectId : null,
+    lotNumber: (formData.get("lotNumber") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
+  const { address, closeDate, templateId, projectId, lotNumber } = parsed.data;
 
   const { data: home, error: homeError } = await supabase
     .from("homes")
@@ -93,6 +121,35 @@ export async function createHome(formData: FormData) {
       const { error: itemsError } = await supabase.from("home_items").insert(homeItems);
       if (itemsError) throw new Error("Failed to clone template items");
     }
+
+    // Clone template files to the new home
+    const { data: templateFiles } = await supabase
+      .from("files")
+      .select("*")
+      .eq("template_id", templateId);
+
+    if (templateFiles && templateFiles.length > 0) {
+      const { data: { user } } = await supabase.auth.getUser();
+      for (const tf of templateFiles) {
+        const newPath = `${context.builder.id}/${home.id}/general/${Date.now()}-${tf.filename}`;
+        const { error: copyError } = await supabase.storage
+          .from("documents")
+          .copy(tf.storage_path, newPath);
+
+        if (!copyError) {
+          await supabase.from("files").insert({
+            builder_id: context.builder.id,
+            home_id: home.id,
+            home_item_id: null,
+            uploaded_by: user!.id,
+            storage_path: newPath,
+            filename: tf.filename,
+            mime_type: tf.mime_type,
+            size_bytes: tf.size_bytes,
+          });
+        }
+      }
+    }
   }
 
   await supabase.from("activity_log").insert({
@@ -112,6 +169,11 @@ export async function updateHomeStatus(homeId: string, status: string) {
 
   if (!context || context.role !== "owner") {
     throw new Error("Unauthorized");
+  }
+
+  const parsed = updateStatusSchema.safeParse({ status });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
   }
 
   const { error } = await supabase

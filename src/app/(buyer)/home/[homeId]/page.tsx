@@ -23,15 +23,18 @@ export default async function BuyerHomePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Security: verify the user has a home_assignment for this home
-  const { data: assignment } = await supabase
+  // Fetch all home assignments for this user (for multi-home nav)
+  const { data: allAssignments } = await supabase
     .from("home_assignments")
-    .select("id")
-    .eq("home_id", homeId)
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .select("id, home_id, homes(address, lot_number)")
+    .eq("user_id", user.id);
 
+  const assignments = allAssignments ?? [];
+  const assignment = assignments.find((a) => a.home_id === homeId);
   if (!assignment) notFound();
+
+  const hasMultipleHomes = assignments.length > 1;
+  const otherHomes = assignments.filter((a) => a.home_id !== homeId);
 
   // Fetch home with builder info
   const { data: home } = await supabase
@@ -98,6 +101,30 @@ export default async function BuyerHomePage({
             <span className="font-semibold">{builderName}</span>
           </div>
           <div className="flex items-center gap-4">
+            {hasMultipleHomes && (
+              <details className="relative">
+                <summary className="cursor-pointer text-sm opacity-80 hover:opacity-100 list-none">
+                  My Homes ▾
+                </summary>
+                <div className="absolute right-0 top-full mt-1 z-50 min-w-[220px] rounded-md border bg-white shadow-lg">
+                  {otherHomes.map((a) => {
+                    const h = a.homes as any;
+                    const label = h?.lot_number
+                      ? `Lot ${h.lot_number} — ${h.address}`
+                      : h?.address ?? "Home";
+                    return (
+                      <Link
+                        key={a.home_id}
+                        href={`/home/${a.home_id}`}
+                        className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
+                      >
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
             <Link
               href={`/home/${homeId}/documents`}
               className="text-sm opacity-80 hover:opacity-100"

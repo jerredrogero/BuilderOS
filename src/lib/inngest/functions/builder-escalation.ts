@@ -2,7 +2,7 @@ import { inngest } from "@/lib/inngest/client";
 import { createClient } from "@supabase/supabase-js";
 import { render } from "@react-email/render";
 import { BuilderEscalationEmail } from "@/lib/email/templates/builder-escalation";
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/email/client";
 
 export const builderEscalation = inngest.createFunction(
   { id: "builder-escalation", name: "Builder Escalation Digest", triggers: [{ cron: "0 8 * * 1" }] },
@@ -11,8 +11,6 @@ export const builderEscalation = inngest.createFunction(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-
-    const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Fetch all builders with a contact_email
     const builders = await step.run("fetch-builders", async () => {
@@ -149,7 +147,7 @@ export const builderEscalation = inngest.createFunction(
         continue;
       }
 
-      await step.run(`send-escalation-${builder.id}`, async () => {
+      const sent = await step.run(`send-escalation-${builder.id}`, async () => {
         const html = await render(
           BuilderEscalationEmail({
             builderName: builder.name,
@@ -159,21 +157,38 @@ export const builderEscalation = inngest.createFunction(
           }) as React.ReactElement
         );
 
-        await resend.emails.send({
+        const result = await sendEmail({
           from: "BuilderOS <digest@builderos.com>",
           to: builder.contact_email,
           subject: `${builder.name} — Weekly Action Digest`,
           html,
         });
+
+        if (!result.success) {
+          // Log failure so it's visible in the system
+          await supabase.from("activity_log").insert({
+            builder_id: builder.id,
+            action: "email_send_failed",
+            metadata: {
+              template: "builder_escalation",
+              recipient_email: builder.contact_email,
+              error: result.error,
+            },
+          });
+          return false;
+        }
+        return true;
       });
 
-      results.push({
-        builderId: builder.id,
-        builderName: builder.name,
-        overdueCount: digest.overdueItems.length,
-        stuckCount: digest.stuckBuyers.length,
-        upcomingCount: digest.upcomingDeadlines.length,
-      });
+      if (sent) {
+        results.push({
+          builderId: builder.id,
+          builderName: builder.name,
+          overdueCount: digest.overdueItems.length,
+          stuckCount: digest.stuckBuyers.length,
+          upcomingCount: digest.upcomingDeadlines.length,
+        });
+      }
     }
 
     return { digestsSent: results.length, results };

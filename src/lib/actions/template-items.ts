@@ -3,11 +3,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const templateItemSchema = z.object({
+  type: z.enum(["document", "warranty", "utility", "info", "punch_list"], {
+    error: "Type must be one of: document, warranty, utility, info, punch_list",
+  }),
+  category: z.string().min(1, "Category is required"),
+  title: z.string().min(1, "Title is required"),
+});
 
 function parseItemFields(formData: FormData) {
   const type = formData.get("type") as string;
   const category = formData.get("category") as string;
   const title = formData.get("title") as string;
+
+  const parsed = templateItemSchema.safeParse({ type, category, title });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
   const description = (formData.get("description") as string) || null;
   const isCritical = formData.get("isCritical") === "on";
   const dueDateOffsetRaw = formData.get("dueDateOffset") as string;
@@ -98,6 +113,78 @@ export async function updateTemplateItem(
     .eq("template_id", templateId);
 
   if (error) throw new Error("Failed to update template item");
+
+  revalidatePath(`/templates/${templateId}`);
+}
+
+export async function getTemplateFiles(templateId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("files")
+    .select("*")
+    .eq("template_id", templateId)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+export async function uploadTemplateFile(
+  templateId: string,
+  templateItemId: string | null,
+  formData: FormData
+) {
+  const supabase = await createClient();
+  const context = await getCurrentBuilder();
+  if (!context || context.role !== "owner") throw new Error("Unauthorized");
+
+  const file = formData.get("file") as File;
+  if (!file) throw new Error("No file provided");
+
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error("File too large. Maximum 25MB.");
+  }
+
+  const storagePath = `${context.builder.id}/templates/${templateId}/${Date.now()}-${file.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(storagePath, file);
+
+  if (uploadError) throw new Error("Failed to upload file");
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error: dbError } = await supabase.from("files").insert({
+    builder_id: context.builder.id,
+    template_id: templateId,
+    template_item_id: templateItemId,
+    uploaded_by: user!.id,
+    storage_path: storagePath,
+    filename: file.name,
+    mime_type: file.type,
+    size_bytes: file.size,
+  });
+
+  if (dbError) throw new Error("Failed to save file record");
+
+  revalidatePath(`/templates/${templateId}`);
+}
+
+export async function deleteTemplateFile(templateId: string, fileId: string) {
+  const supabase = await createClient();
+  const context = await getCurrentBuilder();
+  if (!context || context.role !== "owner") throw new Error("Unauthorized");
+
+  const { data: file } = await supabase
+    .from("files")
+    .select("storage_path")
+    .eq("id", fileId)
+    .eq("template_id", templateId)
+    .single();
+
+  if (!file) throw new Error("File not found");
+
+  await supabase.storage.from("documents").remove([file.storage_path]);
+  await supabase.from("files").delete().eq("id", fileId);
 
   revalidatePath(`/templates/${templateId}`);
 }

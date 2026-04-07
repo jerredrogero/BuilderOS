@@ -2,9 +2,7 @@ import { inngest } from "@/lib/inngest/client";
 import { createClient } from "@supabase/supabase-js";
 import { render } from "@react-email/render";
 import { WarrantyReminderEmail } from "@/lib/email/templates/warranty-reminder";
-import { Resend } from "resend";
-
-const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+import { sendEmail } from "@/lib/email/client";
 
 type ReminderType = "overdue" | "deadline_3d" | "deadline_14d";
 
@@ -15,8 +13,6 @@ export const warrantyReminders = inngest.createFunction(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-
-    const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Fetch all warranty items that are not started and have a deadline within 14 days or overdue
     const items = await step.run("fetch-warranty-items", async () => {
@@ -117,6 +113,11 @@ export const warrantyReminders = inngest.createFunction(
         await step.run(
           `send-warranty-reminder-${item.id}-${reminderType}-${buyerEmail}`,
           async () => {
+            const subject =
+              daysLeft < 0
+                ? `Overdue: Warranty Registration for ${item.title}`
+                : `Warranty Registration Reminder: ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+
             const html = await render(
               WarrantyReminderEmail({
                 builderName: builder?.name || "Your Builder",
@@ -128,15 +129,29 @@ export const warrantyReminders = inngest.createFunction(
               })
             );
 
-            await resend.emails.send({
+            const result = await sendEmail({
               from: "BuilderOS <reminders@builderos.com>",
               to: buyerEmail,
-              subject:
-                daysLeft < 0
-                  ? `Overdue: Warranty Registration for ${item.title}`
-                  : `Warranty Registration Reminder: ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`,
+              subject,
               html,
             });
+
+            if (!result.success) {
+              // Log failure to activity_log so builders can see it
+              await supabase.from("activity_log").insert({
+                home_id: home.id,
+                action: "email_send_failed",
+                metadata: {
+                  template: "warranty_reminder",
+                  reminder_type: reminderType,
+                  item_id: item.id,
+                  item_title: item.title,
+                  recipient_email: buyerEmail,
+                  error: result.error,
+                },
+              });
+              return; // Don't record as sent
+            }
 
             // Record in reminders_sent
             await supabase.from("reminders_sent").insert({

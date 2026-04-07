@@ -4,24 +4,61 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentBuilder } from "@/lib/queries/builders";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const assetSchema = z.object({
+  category: z.string().min(1, "Category is required"),
+  name: z.string().min(1, "Asset name is required"),
+  manufacturer: z.string().nullable(),
+  modelNumber: z.string().nullable(),
+  serialNumber: z.string().nullable(),
+  installDate: z
+    .string()
+    .nullable()
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      "Install date must be a valid date"
+    ),
+  location: z.string().nullable(),
+});
+
+function parseAssetFields(formData: FormData) {
+  const parsed = assetSchema.safeParse({
+    category: formData.get("category"),
+    name: formData.get("name"),
+    manufacturer: (formData.get("manufacturer") as string) || null,
+    modelNumber: (formData.get("modelNumber") as string) || null,
+    serialNumber: (formData.get("serialNumber") as string) || null,
+    installDate: (formData.get("installDate") as string) || null,
+    location: (formData.get("location") as string) || null,
+  });
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues.map((e) => e.message).join(", "));
+  }
+
+  return parsed.data;
+}
 
 export async function createHomeAsset(homeId: string, formData: FormData) {
   const supabase = await createClient();
   const context = await getCurrentBuilder();
   if (!context || context.role !== "owner") throw new Error("Unauthorized");
 
+  const fields = parseAssetFields(formData);
+
   const { data, error } = await supabase
     .from("home_assets")
     .insert({
       home_id: homeId,
       builder_id: context.builder.id,
-      category: formData.get("category") as string,
-      name: formData.get("name") as string,
-      manufacturer: formData.get("manufacturer") as string || null,
-      model_number: formData.get("modelNumber") as string || null,
-      serial_number: formData.get("serialNumber") as string || null,
-      install_date: formData.get("installDate") as string || null,
-      location: formData.get("location") as string || null,
+      category: fields.category,
+      name: fields.name,
+      manufacturer: fields.manufacturer,
+      model_number: fields.modelNumber,
+      serial_number: fields.serialNumber,
+      install_date: fields.installDate,
+      location: fields.location,
     })
     .select()
     .single();
@@ -46,16 +83,18 @@ export async function updateHomeAsset(homeId: string, assetId: string, formData:
   const context = await getCurrentBuilder();
   if (!context || context.role !== "owner") throw new Error("Unauthorized");
 
+  const fields = parseAssetFields(formData);
+
   const { error } = await supabase
     .from("home_assets")
     .update({
-      category: formData.get("category") as string,
-      name: formData.get("name") as string,
-      manufacturer: formData.get("manufacturer") as string || null,
-      model_number: formData.get("modelNumber") as string || null,
-      serial_number: formData.get("serialNumber") as string || null,
-      install_date: formData.get("installDate") as string || null,
-      location: formData.get("location") as string || null,
+      category: fields.category,
+      name: fields.name,
+      manufacturer: fields.manufacturer,
+      model_number: fields.modelNumber,
+      serial_number: fields.serialNumber,
+      install_date: fields.installDate,
+      location: fields.location,
       updated_at: new Date().toISOString(),
     })
     .eq("id", assetId)

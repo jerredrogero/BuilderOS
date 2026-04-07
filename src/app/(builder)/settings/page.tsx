@@ -11,14 +11,27 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { LogoUpload } from "@/components/builder/logo-upload";
 
 export default async function SettingsPage() {
   const context = await getCurrentBuilder();
   const builder = context?.builder;
 
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6 max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Company Logo</CardTitle>
+          <CardDescription>
+            Upload your company logo. It will appear on buyer-facing pages.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LogoUpload currentLogoUrl={builder?.logo_url ?? null} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

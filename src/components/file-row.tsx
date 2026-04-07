@@ -13,10 +13,27 @@ interface FileRowProps {
   showDelete?: boolean;
 }
 
+const VIEWABLE_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "text/plain",
+]);
+
+function isViewable(mimeType: string | null | undefined, filename: string): boolean {
+  if (mimeType && VIEWABLE_TYPES.has(mimeType)) return true;
+  const ext = filename.split(".").pop()?.toLowerCase();
+  return ext ? ["pdf", "png", "jpg", "jpeg", "gif", "webp", "svg", "txt"].includes(ext) : false;
+}
+
 export function FileRow({ file, showDelete = true }: FileRowProps) {
   const deleteAction = deleteFile.bind(null, file.id);
   const sizeKB = file.size_bytes ? Math.round(file.size_bytes / 1024) : null;
   const ext = file.mime_type?.split("/")[1] || file.filename.split(".").pop() || "file";
+  const canView = isViewable(file.mime_type, file.filename);
 
   return (
     <div className="flex items-center justify-between rounded-md border p-3">
@@ -31,8 +48,13 @@ export function FileRow({ file, showDelete = true }: FileRowProps) {
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <a href={`/api/files/${file.id}`} target="_blank" rel="noopener noreferrer">
-          <Button variant="ghost" size="sm">View</Button>
+        {canView && (
+          <a href={`/api/files/${file.id}`} target="_blank" rel="noopener noreferrer">
+            <Button variant="ghost" size="sm">View</Button>
+          </a>
+        )}
+        <a href={`/api/files/${file.id}?download=true`} target="_blank" rel="noopener noreferrer">
+          <Button variant="ghost" size="sm">Download</Button>
         </a>
         {showDelete && (
           <form action={deleteAction}>

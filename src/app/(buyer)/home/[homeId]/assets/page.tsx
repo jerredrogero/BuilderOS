@@ -131,6 +131,9 @@ export default async function BuyerAssetsPage({
                     {(!asset.manufacturer || !asset.model_number) && (
                       <Badge variant="secondary" className="text-xs">Needs details</Badge>
                     )}
+                    {asset.home_items?.[0]?.count > 0 && (
+                      <Badge variant="outline" className="text-xs">{asset.home_items[0].count} warranties</Badge>
+                    )}
                     {asset.files?.[0]?.count > 0 && (
                       <Badge variant="outline" className="text-xs">{asset.files[0].count} photos</Badge>
                     )}
