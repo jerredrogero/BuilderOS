@@ -115,9 +115,17 @@ export default async function HomeDetailPage({
             <Badge variant={statusVariant(handoffStatus)}>{handoffStatus}</Badge>
           </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/homes/${homeId}/activity`}>Activity Log</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/homes/${homeId}/assets`}>Assets</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/homes/${homeId}/inspections`}>Inspections</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/homes/${homeId}/activity`}>Activity Log</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Status controls */}

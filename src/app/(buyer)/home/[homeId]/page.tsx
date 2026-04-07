@@ -97,12 +97,20 @@ export default async function BuyerHomePage({
             )}
             <span className="font-semibold">{builderName}</span>
           </div>
-          <Link
-            href={`/home/${homeId}/documents`}
-            className="text-sm opacity-80 hover:opacity-100"
-          >
-            Documents
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/home/${homeId}/documents`}
+              className="text-sm opacity-80 hover:opacity-100"
+            >
+              Documents
+            </Link>
+            <Link
+              href={`/home/${homeId}/assets`}
+              className="text-sm opacity-80 hover:opacity-100"
+            >
+              Assets
+            </Link>
+          </div>
         </div>
       </header>
 
