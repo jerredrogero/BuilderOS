@@ -5,9 +5,14 @@ import { calculateCompletion } from "@/lib/utils/completion";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+// Postgres-compatible UUID format (8-4-4-4-12 hex). Zod v4's `.uuid()` enforces
+// RFC 4122 version/variant bits, which rejects valid Postgres UUIDs (including
+// the demo seed data).
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const markCompleteSchema = z.object({
-  homeId: z.string().uuid("Invalid home ID"),
-  itemId: z.string().uuid("Invalid item ID"),
+  homeId: z.string().regex(UUID_REGEX, "Invalid home ID"),
+  itemId: z.string().regex(UUID_REGEX, "Invalid item ID"),
 });
 
 export async function markItemComplete(homeId: string, itemId: string) {
@@ -103,8 +108,8 @@ export async function uploadProofFile(
 ) {
   const idParsed = z
     .object({
-      homeId: z.string().uuid("Invalid home ID"),
-      itemId: z.string().uuid("Invalid item ID"),
+      homeId: z.string().regex(UUID_REGEX, "Invalid home ID"),
+      itemId: z.string().regex(UUID_REGEX, "Invalid item ID"),
     })
     .safeParse({ homeId, itemId });
 

@@ -15,7 +15,11 @@ const ITEM_STATUSES = [
   "not_applicable",
 ] as const;
 
-const uuidSchema = z.string().uuid();
+// Postgres-compatible UUID format (8-4-4-4-12 hex). Zod v4's `.uuid()` enforces
+// RFC 4122 version/variant bits, which rejects valid Postgres UUIDs (including
+// the demo seed data).
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuidSchema = z.string().regex(UUID_REGEX, "Invalid UUID");
 
 const statusUpdateSchema = z.object({
   homeId: uuidSchema,

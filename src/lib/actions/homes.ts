@@ -6,14 +6,19 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+// Postgres-compatible UUID format (8-4-4-4-12 hex). Zod v4's `.uuid()` enforces
+// RFC 4122 version/variant bits, which rejects valid Postgres UUIDs (including
+// the demo seed data).
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const createHomeSchema = z.object({
   address: z.string().min(1, "Address is required"),
   closeDate: z.string().min(1, "Close date is required").refine(
     (val) => !isNaN(Date.parse(val)),
     "Close date must be a valid date"
   ),
-  templateId: z.string().uuid("Invalid template").nullable(),
-  projectId: z.string().uuid("Invalid project").nullable(),
+  templateId: z.string().regex(UUID_REGEX, "Invalid template").nullable(),
+  projectId: z.string().regex(UUID_REGEX, "Invalid project").nullable(),
   lotNumber: z.string().nullable(),
 });
 
